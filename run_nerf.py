@@ -28,7 +28,6 @@ from load_LINEMOD import load_LINEMOD_data
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-np.random.seed(0)
 DEBUG = False
 
 
@@ -504,6 +503,8 @@ def config_parser():
     parser.add_argument("--datadir", type=str, default='./data/llff/fern',
                         help='input data directory')
     parser.add_argument("--data_split_file", type=str, default='./llff_data_splits.json', help="JSON file with data splits")
+    parser.add_argument("--seed", type=int, default=0, help="seed for random weight initialization")
+    parser.add_argument("--scene", type=str, default="fern", help="name of llff scene")
 
     # training options
     parser.add_argument("--netdepth", type=int, default=8,
@@ -621,10 +622,19 @@ def config_parser():
     return parser
 
 
+def set_seed(torch_seed, numpy_seed=0, random_seed=0):
+    torch.manual_seed(torch_seed)
+    np.random.seed(numpy_seed)
+    random.seed(random_seed)
+
+
 def train():
 
     parser = config_parser()
     args = parser.parse_args()
+
+    # Set ensemble seed.
+    set_seed(args.seed)
 
     # Load data
     K = None
@@ -638,7 +648,7 @@ def train():
         print('Loaded llff', images.shape, render_poses.shape, hwf, args.datadir)
         
         all_data_splits = json.load(open(args.data_split_file))
-        scene_data_split = all_data_splits[args.expname]
+        scene_data_split = all_data_splits[args.scene]
         i_train = np.array(scene_data_split["train"])
         i_test = np.array(scene_data_split["test"])
         i_val = i_test[-1] # val using only last test image.

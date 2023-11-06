@@ -1,4 +1,4 @@
-expname = fern
+scene = fern
 basedir = ./logs
 datadir = ./data/nerf_llff_data/fern
 dataset_type = llff

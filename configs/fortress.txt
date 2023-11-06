@@ -1,4 +1,4 @@
-expname = fortress
+scene = fortress
 basedir = ./logs
 datadir = ./data/nerf_llff_data/fortress
 dataset_type = llff

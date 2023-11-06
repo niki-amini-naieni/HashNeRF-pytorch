@@ -301,7 +301,7 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
 
     # Pytest, overwrite u with numpy's fixed random numbers
     if pytest:
-        np.random.seed(0)
+        #np.random.seed(0)
         new_shape = list(cdf.shape[:-1]) + [N_samples]
         if det:
             u = np.linspace(0., 1., N_samples)
