@@ -562,6 +562,7 @@ def config_parser():
                         help='number of steps to train on central crops')
     parser.add_argument("--precrop_frac", type=float,
                         default=.5, help='fraction of img taken for central crops')
+    parser.add_argument("--iters", type=int, default=5000, help='number of training iterations')
 
     # dataset options
     parser.add_argument("--dataset_type", type=str, default='llff',
@@ -814,7 +815,7 @@ def train():
         rays_rgb = torch.Tensor(rays_rgb).to(device)
 
 
-    N_iters = 50000 + 1
+    N_iters = args.iters
     print('Begin')
     print('TRAIN views are', i_train)
     print('TEST views are', i_test)
