@@ -641,6 +641,7 @@ def train():
         scene_data_split = all_data_splits[args.expname]
         i_train = np.array(scene_data_split["train"])
         i_test = np.array(scene_data_split["test"])
+        i_val = i_test[-1] # val using only last test image.
 
         print('DEFINING BOUNDS')
         if args.no_ndc:
