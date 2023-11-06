@@ -503,6 +503,7 @@ def config_parser():
                         help='where to store ckpts and logs')
     parser.add_argument("--datadir", type=str, default='./data/llff/fern',
                         help='input data directory')
+    parser.add_argument("--data_split_file", type=str, default='./llff_data_splits.json', help="JSON file with data splits")
 
     # training options
     parser.add_argument("--netdepth", type=int, default=8,
@@ -635,17 +636,11 @@ def train():
         poses = poses[:,:3,:4]
         args.bounding_box = bounding_box
         print('Loaded llff', images.shape, render_poses.shape, hwf, args.datadir)
-
-        if not isinstance(i_test, list):
-            i_test = [i_test]
-
-        if args.llffhold > 0:
-            print('Auto LLFF holdout,', args.llffhold)
-            i_test = np.arange(images.shape[0])[::args.llffhold]
-
-        i_val = i_test
-        i_train = np.array([i for i in np.arange(int(images.shape[0])) if
-                        (i not in i_test and i not in i_val)])
+        
+        all_data_splits = json.load(open(args.data_split_file))
+        scene_data_split = all_data_splits[args.expname]
+        i_train = np.array(scene_data_split["train"])
+        i_test = np.array(scene_data_split["test"])
 
         print('DEFINING BOUNDS')
         if args.no_ndc:
