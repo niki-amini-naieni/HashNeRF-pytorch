@@ -563,7 +563,7 @@ def config_parser():
                         help='number of steps to train on central crops')
     parser.add_argument("--precrop_frac", type=float,
                         default=.5, help='fraction of img taken for central crops')
-    parser.add_argument("--iters", type=int, default=5001, help='number of training iterations')
+    parser.add_argument("--iters", type=int, default=5000, help='number of training iterations')
 
     # dataset options
     parser.add_argument("--dataset_type", type=str, default='llff',
@@ -825,7 +825,7 @@ def train():
     time_list = []
     start = start + 1
     time0 = time.time()
-    for i in trange(start, N_iters):
+    for i in trange(start, N_iters + 1):
         # Sample random ray batch
         if use_batching:
             # Random over all images
