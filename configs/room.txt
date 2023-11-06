@@ -1,4 +1,4 @@
-expname = room_test
+expname = room
 basedir = ./logs
 datadir = ./data/nerf_llff_data/room
 dataset_type = llff

@@ -1,4 +1,4 @@
-expname = fortress_test
+expname = fortress
 basedir = ./logs
 datadir = ./data/nerf_llff_data/fortress
 dataset_type = llff

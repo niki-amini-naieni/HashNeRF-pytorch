@@ -1,4 +1,4 @@
-expname = flower_test
+expname = flower
 basedir = ./logs
 datadir = ./data/nerf_llff_data/flower
 dataset_type = llff

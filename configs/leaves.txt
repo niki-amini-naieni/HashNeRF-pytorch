@@ -1,4 +1,4 @@
-expname = leaves_test
+expname = leaves
 basedir = ./logs
 datadir = ./data/nerf_llff_data/leaves
 dataset_type = llff
