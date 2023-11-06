@@ -563,7 +563,7 @@ def config_parser():
                         help='number of steps to train on central crops')
     parser.add_argument("--precrop_frac", type=float,
                         default=.5, help='fraction of img taken for central crops')
-    parser.add_argument("--iters", type=int, default=5000, help='number of training iterations')
+    parser.add_argument("--iters", type=int, default=5001, help='number of training iterations')
 
     # dataset options
     parser.add_argument("--dataset_type", type=str, default='llff',
@@ -600,13 +600,13 @@ def config_parser():
     # logging/saving options
     parser.add_argument("--i_print",   type=int, default=100,
                         help='frequency of console printout and metric loggin')
-    parser.add_argument("--i_img",     type=int, default=500,
+    parser.add_argument("--i_img",     type=int, default=4999,
                         help='frequency of tensorboard image logging')
-    parser.add_argument("--i_weights", type=int, default=10000,
+    parser.add_argument("--i_weights", type=int, default=4999,
                         help='frequency of weight ckpt saving')
-    parser.add_argument("--i_testset", type=int, default=1000,
+    parser.add_argument("--i_testset", type=int, default=4999,
                         help='frequency of testset saving')
-    parser.add_argument("--i_video",   type=int, default=5000,
+    parser.add_argument("--i_video",   type=int, default=4999,
                         help='frequency of render_poses video saving')
 
     parser.add_argument("--finest_res",   type=int, default=512,
