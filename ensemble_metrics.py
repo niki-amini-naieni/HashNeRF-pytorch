@@ -8,7 +8,7 @@ mpl.rcParams['agg.path.chunksize'] = 1e9
 import multiprocessing as mp
 import math
 
-EPS = 1e-12
+EPS = 1e-5
 
 """
 - preds, gts, and other inputs are the aggregated ones for the whole ensemble of M models of shape (# test images x H x W x C), C is 3 for preds and gts but 1 for acc
@@ -313,7 +313,7 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
     )
 
 
-def get_ause(preds, gts, vars, accs, add_epistem):
+def get_ause(preds, gts, vars, accs, add_epistem, fname):
     squared_errs = (preds - gts) ** 2
     squared_errs = squared_errs.reshape(-1, 3)
     squared_errs = np.mean(
@@ -325,5 +325,16 @@ def get_ause(preds, gts, vars, accs, add_epistem):
         epistem = (1 - accs) ** 2
         vars = vars + epistem
 
-    _, _, _, ause = calc_ause(vars, squared_errs)
+    ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(vars, squared_errs)
+
+    # Plot and save results.
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    # Plot sparsification curves.
+    ax.plot(ratio_removed, ause_err, "g", linewidth=2, linestyle="-")
+    ax.plot(ratio_removed, ause_err_by_var, "r", linewidth=2, linestyle="-")
+    # Label axes.
+    ax.set_xlabel("Ratio Removed")
+    ax.set_ylabel("RMSE")
+    fig.savefig(fname)
+    plt.close(fig)
     return ause

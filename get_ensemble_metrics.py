@@ -961,8 +961,8 @@ def test():
         True,
         args.basedir + "/" + args.scene + "/cal-plot-epist.png",
     )
-    ause_naive = get_ause(preds, gts, vars, accs, False)
-    ause_epist = get_ause(preds, gts, vars, accs, True)
+    ause_naive = get_ause(preds, gts, vars, accs, False, args.basedir + "/" + args.scene + "/sparse-curves-naive.png")
+    ause_epist = get_ause(preds, gts, vars, accs, True, args.basedir + "/" + args.scene + "/sparse-curves-epist.png")
 
     # Print Results.
     print("PSNR:")
