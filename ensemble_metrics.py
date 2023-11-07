@@ -213,10 +213,10 @@ def get_avg_err(preds, gts):
 
 
 def get_nll(preds, gts, vars, accs, add_epistem):
-    gts = gts.flatten(end_dim=-2)
-    preds = preds.flatten(end_dim=-2)
-    vars = vars.flatten(end_dim=-2)
-    accs = accs.flatten()
+    gts = gts.reshape(-1, 3)
+    preds = preds.reshape(-1, 3)
+    vars = vars.reshape(-1, 3)
+    accs = accs.reshape(-1)
     log_pdf_vals = []
     for px_ind in range(vars.shape[0]):
         gt = gts[px_ind]
@@ -237,10 +237,10 @@ def get_nll(preds, gts, vars, accs, add_epistem):
 
 
 def get_nll_finite_diff(preds, gts, vars, accs, add_epistem):
-    gts = gts.flatten(end_dim=-2)
-    preds = preds.flatten(end_dim=-2)
-    vars = vars.flatten(end_dim=-2)
-    accs = accs.flatten()
+    gts = gts.reshape(-1, 3)
+    preds = preds.reshape(-1, 3)
+    vars = vars.reshape(-1, 3)
+    accs = accs.reshape(-1)
     log_pdf_vals = []
     for px_ind in range(vars.shape[0]):
         gt = gts[px_ind]
@@ -270,10 +270,10 @@ def get_nll_finite_diff(preds, gts, vars, accs, add_epistem):
 
 
 def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
-    preds = preds.flatten(end_dim=-2).cpu().numpy()
-    gts = gts.flatten(end_dim=-2).cpu().numpy()
-    vars = vars.flatten(end_dim=-2).cpu().numpy()
-    accs = accs.flatten(end_dim=-2).cpu().numpy()
+    preds = preds.reshape(-1, 3)
+    gts = gts.reshape(-1, 3)
+    vars = vars.reshape(-1, 3)
+    accs = accs.reshape(-1, 3)
     p_r = []
     p_g = []
     p_b = []
@@ -310,12 +310,12 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
 
 def get_ause(preds, gts, vars, accs, add_epistem):
     squared_errs = (preds - gts) ** 2
-    squared_errs = squared_errs.flatten(end_dim=-2)
+    squared_errs = squared_errs.reshape(-1, 3)
     squared_errs = np.mean(
         squared_errs, axis=-1
     )  # Use per-pixel mse over color channels
-    vars = np.mean(vars.flatten(end_dim=-2), axis=-1)
-    accs = accs.flatten()
+    vars = np.mean(vars.reshape(-1, 3), axis=-1)
+    accs = accs.reshape(-1)
     if add_epistem:
         epistem = (1 - accs) ** 2
         vars = vars + epistem
