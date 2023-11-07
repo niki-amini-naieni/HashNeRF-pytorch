@@ -3,6 +3,8 @@ from skimage.metrics import structural_similarity
 from scipy.misc import derivative
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+mpl.rcParams['agg.path.chunksize'] = 1e9
 import multiprocessing as mp
 import math
 
@@ -294,9 +296,9 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
             p_g.append(norm_cdf(gt[1], mu[1], var[1]))
             p_b.append(norm_cdf(gt[2], mu[2], var[2]))
 
-    p_r = np.array(p_r)
-    p_g = np.array(p_g)
-    p_b = np.array(p_b)
+    p_r = np.sort(np.array(p_r))
+    p_g = np.sort(np.array(p_g))
+    p_b = np.sort(np.array(p_b))
     hat_p_r = get_emp_confs(p_r)
     hat_p_g = get_emp_confs(p_g)
     hat_p_b = get_emp_confs(p_b)
