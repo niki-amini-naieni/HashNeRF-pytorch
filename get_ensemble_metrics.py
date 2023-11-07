@@ -944,6 +944,7 @@ def test():
     nll_epist = get_nll(preds, gts, vars, accs, True)
     nll_fin_naive = get_nll_finite_diff(preds, gts, vars, accs, False)
     nll_fin_epist = get_nll_finite_diff(preds, gts, vars, accs, True)
+    os.makedirs(args.basedir + "/" + args.scene, exist_ok=True)
     cal_err_naive = get_cal_err(
         preds,
         gts,
