@@ -294,9 +294,9 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
             p_g.append(norm_cdf(gt[1], mu[1], var[1]))
             p_b.append(norm_cdf(gt[2], mu[2], var[2]))
 
-    hat_p_r = get_emp_conf(p_r)
-    hat_p_g = get_emp_conf(p_g)
-    hat_p_b = get_emp_conf(p_b)
+    hat_p_r = get_emp_confs(p_r)
+    hat_p_g = get_emp_confs(p_g)
+    hat_p_b = get_emp_confs(p_b)
 
     # Create and save calibration plot.
     create_and_save_fig_rgb(p_r, hat_p_r, p_g, hat_p_g, p_b, hat_p_b, f_name)
