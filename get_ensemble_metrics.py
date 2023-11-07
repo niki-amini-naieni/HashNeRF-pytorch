@@ -883,6 +883,21 @@ def test():
     ensemble = []
     for model_ind in range(args.M):
         args.expname = args.scene + "_m_" + str(model_ind)
+        if args.i_embed==1:
+            args.expname += "_hashXYZ"
+        elif args.i_embed==0:
+            args.expname += "_posXYZ"
+        if args.i_embed_views==2:
+            args.expname += "_sphereVIEW"
+        elif args.i_embed_views==0:
+            args.expname += "_posVIEW"
+        args.expname += "_fine"+str(args.finest_res) + "_log2T"+str(args.log2_hashmap_size)
+        args.expname += "_lr"+str(args.lrate) + "_decay"+str(args.lrate_decay)
+        args.expname += "_RAdam"
+        if args.sparse_loss_weight > 0:
+            args.expname += "_sparse" + str(args.sparse_loss_weight)
+        args.expname += "_TV" + str(args.tv_loss_weight)
+        
         _, render_kwargs_test, _, _, _ = create_nerf(args)
         render_kwargs_test.update(bds_dict)
         ensemble.append(render_kwargs_test)
