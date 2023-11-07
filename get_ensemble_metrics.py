@@ -195,19 +195,12 @@ def render_path(
             except:
                 gt_img = gt_imgs[i]
             p = -10.0 * np.log10(np.mean(np.square(rgb.cpu().numpy() - gt_img)))
-            print(p)
+            print("PSNR: " + str(p))
             psnrs.append(p)
 
     rgbs = np.stack(rgbs, 0)
     depths = np.stack(depths, 0)
     accs = np.stack(accs, 0)
-    if gt_imgs is not None and render_factor == 0:
-        avg_psnr = sum(psnrs) / len(psnrs)
-        print("Avg PSNR over Test set: ", avg_psnr)
-        with open(
-            os.path.join(savedir, "test_psnrs_avg{:0.2f}.pkl".format(avg_psnr)), "wb"
-        ) as fp:
-            pickle.dump(psnrs, fp)
 
     return rgbs, depths, accs
 
