@@ -697,7 +697,7 @@ def config_parser():
     )
     parser.add_argument(
         "--render_test",
-        action="store_true",
+        action="store_false",
         help="render the test set instead of render_poses path",
     )
     parser.add_argument(
@@ -897,7 +897,7 @@ def test():
         if args.sparse_loss_weight > 0:
             args.expname += "_sparse" + str(args.sparse_loss_weight)
         args.expname += "_TV" + str(args.tv_loss_weight)
-        
+
         _, render_kwargs_test, _, _, _ = create_nerf(args)
         render_kwargs_test.update(bds_dict)
         ensemble.append(render_kwargs_test)
