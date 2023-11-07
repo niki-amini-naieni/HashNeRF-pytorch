@@ -90,7 +90,7 @@ def get_emp_confs(p, num_procs=12):
 def calc_ause(unc_vec, err_vec, err_type="rmse"):
     ratio_removed = np.linspace(0, 1, 100, endpoint=False)
     # Sort the error
-    err_vec_sorted, _ = np.sort(err_vec)
+    err_vec_sorted = np.sort(err_vec)
 
     # Calculate the error when removing a fraction pixels with error
     n_valid_pixels = len(err_vec)
@@ -105,7 +105,7 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
     ###########################################
 
     # Sort by variance
-    _, var_vec_sorted_idxs = np.sort(unc_vec)
+    var_vec_sorted_idxs = np.argsort(unc_vec)
     # Sort error by variance
     err_vec_sorted_by_var = err_vec[var_vec_sorted_idxs]
     ause_err_by_var = []
@@ -120,7 +120,7 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
     ause_err = np.array(ause_err)
     ause_err_by_var = np.array(ause_err_by_var)
 
-    ause = np.trapz(ause_err_by_var - ause_err, ratio_removed)
+    ause = np.trapz(np.abs(ause_err_by_var - ause_err), ratio_removed)
     return ratio_removed, ause_err, ause_err_by_var, ause
 
 
