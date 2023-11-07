@@ -275,7 +275,7 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
     preds = preds.reshape(-1, 3)
     gts = gts.reshape(-1, 3)
     vars = vars.reshape(-1, 3)
-    accs = accs.reshape(-1, 3)
+    accs = accs.reshape(-1)
     p_r = []
     p_g = []
     p_b = []
