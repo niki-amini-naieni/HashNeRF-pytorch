@@ -17,6 +17,7 @@ def get_args_parser():
         default="fern",
         help="name of LLFF scene out of {room, fern, flower, fortress, horns, leaves, orchids, trex}",
     )
+    parser.add_argument("--disable_lpips", action="store_true", help="disable lpips for memory reasons")
     parser.add_argument(
         "--gin_config",
         default="../mini-project-2/configs/llff_fern_hold_out_rays.gin",
@@ -195,8 +196,9 @@ avg_geom_err = 0
 for image_ind in range(gts.shape[0]):
     avg_psnr += get_psnr(preds[image_ind], gts[image_ind])
     avg_ssim += get_ssim(preds[image_ind], gts[image_ind])
-    avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
-    avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
+    if not args.disable_lpips:
+      avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
+      avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
 
 avg_psnr = avg_psnr / gts.shape[0]
 avg_ssim = avg_ssim / gts.shape[0]

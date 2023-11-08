@@ -566,6 +566,7 @@ def config_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument("--config", is_config_file=True, help="config file path")
     parser.add_argument("--expname", type=str, help="test name", default="test")
+    parser.add_argument("--disable_lpips", action="store_true", help="disable lpips for memory reasons")
     parser.add_argument(
         "--basedir", type=str, default="./logs/", help="where to store ckpts and logs"
     )
@@ -931,8 +932,9 @@ def test():
     for image_ind in range(gts.shape[0]):
         avg_psnr += get_psnr(preds[image_ind], gts[image_ind])
         avg_ssim += get_ssim(preds[image_ind], gts[image_ind])
-        avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
-        avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
+        if not args.disable_lpips:
+            avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
+            avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
 
     avg_psnr = avg_psnr / gts.shape[0]
     avg_ssim = avg_ssim / gts.shape[0]
