@@ -115,13 +115,13 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
         beta = betas[px_ind]
         pi = pis[px_ind]
         cdf_r_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 0], beta[:, 0], pi
+            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 0], beta[:, 0], pi
             )
         cdf_g_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 1], beta[:, 1], pi
+            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 1], beta[:, 1], pi
             )
         cdf_b_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 2], beta[:, 2], pi
+            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 2], beta[:, 2], pi
             )
         if cal:
             cdf_r = lambda x: A_R.predict(cdf_r_uncal(x))
