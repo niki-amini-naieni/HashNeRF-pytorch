@@ -944,8 +944,6 @@ def test():
     # Compute uncertainty metrics.
     nll_naive = get_nll(preds, gts, vars, accs, False)
     nll_epist = get_nll(preds, gts, vars, accs, True)
-    nll_fin_naive = get_nll_finite_diff(preds, gts, vars, accs, False)
-    nll_fin_epist = get_nll_finite_diff(preds, gts, vars, accs, True)
     os.makedirs(args.basedir + "/" + args.scene, exist_ok=True)
     cal_err_naive = get_cal_err(
         preds,
@@ -966,7 +964,10 @@ def test():
     ause_naive = get_ause(preds, gts, vars, accs, False, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-naive.png")
     ause_epist = get_ause(preds, gts, vars, accs, True, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-epist.png")
 
-    # Print Results.
+    # Print Summary.
+    print("SUMMARY")
+    print()
+    print("Image Quality:")
     print("PSNR:")
     print(avg_psnr)
     print("SSIM:")
@@ -975,7 +976,8 @@ def test():
     print(avg_lpips)
     print("Geom. Avg. Err.:")
     print(avg_geom_err)
-
+    print()
+    print("Uncertainty:")
     print("Cal. Err. (Naive):")
     print(cal_err_naive)
     print("Cal. Err. (Epist.):")
@@ -984,10 +986,6 @@ def test():
     print(ause_naive)
     print("AUSE (Epist.):")
     print(ause_epist)
-    print("NLL Fin. (Naive):")
-    print(nll_fin_naive)
-    print("NLL Fin. (Epist.):")
-    print(nll_fin_epist)
     print("NLL (Naive):")
     print(nll_naive)
     print("NLL (Epist.):")

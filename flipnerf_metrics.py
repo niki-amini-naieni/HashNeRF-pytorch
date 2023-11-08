@@ -114,14 +114,11 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
-        cdf_r_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 0], beta[:, 0], pi
+        cdf_r_uncal = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi
             )
-        cdf_g_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 1], beta[:, 1], pi
+        cdf_g_uncal = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi
             )
-        cdf_b_uncal = lambda x: cdf(
-            np.stack((x,) * num_mix_comps, axis=-1), mu[:, 2], beta[:, 2], pi
+        cdf_b_uncal = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi
             )
         if cal:
             cdf_r = lambda x: A_R.predict(cdf_r_uncal(x))
@@ -132,22 +129,25 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
             cdf_g = cdf_g_uncal
             cdf_b = cdf_b_uncal
 
-        xs = np.linspace(-2, 2, 200)
+        xs = np.linspace(-2, 2, 200).reshape((200, 1))
         ys = cdf_r(xs)
         print(xs.shape)
         print(ys.shape)
+        xs = xs[:, 0]
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_r = interp1d(ys, xs)
         interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
 
-        xs = np.linspace(-2, 2, 200)
-        ys = cdf_g(x)
+        xs = np.linspace(-2, 2, 200).reshape((200, 1))
+        ys = cdf_g(xs)
+        xs = xs[:, 0]
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_g = interp1d(ys, xs)
         interquart_g = i_cdf_g(0.75) - i_cdf_g(0.25)
 
-        xs = np.linspace(-2, 2, 200)
-        ys = cdf_b(x)
+        xs = np.linspace(-2, 2, 200).reshape((200, 1))
+        ys = cdf_b(xs)
+        xs = xs[:, 0]
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_b = interp1d(ys, xs)
         interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
