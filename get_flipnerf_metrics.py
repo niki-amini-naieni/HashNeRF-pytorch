@@ -226,10 +226,10 @@ print("Geom. Avg. Err.:")
 print(avg_geom_err)
 
 # Compute uncertainty metrics.
-nll_uncal = get_nll(gts, mus, betas, pis)
+nll_uncal = get_nll(gts, mus, betas, pis, args.num_procs)
 print("NLL (Uncal.):")
 print(nll_uncal)
-nll_cal = get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B)
+nll_cal = get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B, args.num_procs)
 print("NLL (Cal.):")
 print(nll_cal)
 cal_err_uncal = get_cal_err(
