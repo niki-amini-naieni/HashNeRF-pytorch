@@ -261,9 +261,9 @@ def get_nll_finite_diff(preds, gts, vars, accs, add_epistem):
             cdf_b = lambda b: norm_cdf(b, mu[2], var[2])
 
         log_pdf = np.log(
-            derivative(cdf_r, gt[0], dx=1e-6)
-            * derivative(cdf_g, gt[1], dx=1e-6)
-            * derivative(cdf_b, gt[2], dx=1e-6)
+            derivative(cdf_r, gt[0], dx=1e-5)
+            * derivative(cdf_g, gt[1], dx=1e-5)
+            * derivative(cdf_b, gt[2], dx=1e-5)
             + EPS
         )
 

@@ -184,7 +184,7 @@ def render_path(
         # normalize depth to [0,1]
         depth = (depth - near) / (far - near)
         depths.append(depth.cpu().numpy())
-        accs.append((acc_fine + acc_coarse).cpu().numpy())
+        accs.append((acc_fine).cpu().numpy())
         if i == 0:
             print("Image shape")
             print(rgb.shape, depth.shape)
