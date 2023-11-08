@@ -28,6 +28,16 @@ import tensorflow as tf
 def get_cdf_params(config, img_inds):
 
     #tf.config.experimental.set_visible_devices([], "GPU")
+    physical_devices = tf.config.list_physical_devices('GPU')
+    try:
+        # Disable first GPU
+        tf.config.set_visible_devices(physical_devices[1:], 'GPU')
+        logical_devices = tf.config.list_logical_devices('GPU')
+        # Logical device was not created for first GPU
+        assert len(logical_devices) == len(physical_devices) - 1
+    except:
+    # Invalid device or cannot modify virtual devices once initialized.
+        pass
 
     # Set to 1 so can select which images (out of all available images for scene) to evaluate model with.
     config.llffhold = 1
