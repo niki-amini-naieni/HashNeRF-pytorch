@@ -951,7 +951,7 @@ def test():
         vars,
         accs,
         False,
-        args.basedir + "/" + args.scene + "/cal-plot-naive.png",
+        args.basedir + "/" + args.scene + "/ensemble-cal-plot-naive.png",
     )
     cal_err_epist = get_cal_err(
         preds,
@@ -959,10 +959,10 @@ def test():
         vars,
         accs,
         True,
-        args.basedir + "/" + args.scene + "/cal-plot-epist.png",
+        args.basedir + "/" + args.scene + "/ensemble-cal-plot-epist.png",
     )
-    ause_naive = get_ause(preds, gts, vars, accs, False, args.basedir + "/" + args.scene + "/sparse-curves-naive.png")
-    ause_epist = get_ause(preds, gts, vars, accs, True, args.basedir + "/" + args.scene + "/sparse-curves-epist.png")
+    ause_naive = get_ause(preds, gts, vars, accs, False, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-naive.png")
+    ause_epist = get_ause(preds, gts, vars, accs, True, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-epist.png")
 
     # Print Results.
     print("PSNR:")

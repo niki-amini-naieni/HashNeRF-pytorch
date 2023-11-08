@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 1e9
 import multiprocessing as mp
+from scipy.interpolate import interp1d
 import math
 
 EPS = 1e-12
@@ -86,6 +87,61 @@ def get_emp_confs(p, num_procs=12):
     return np.array(hat_p)
 
 
+def adjust_for_quantile(ps, cs):
+    ps = np.copy(ps)
+    cs = np.copy(cs)
+    # Assumes ps and cs are sorted in increasing order.
+    for ind in range(len(ps)):
+        if ind > 0:
+            if ps[ind - 1] == ps[ind]:
+                cs[ind - 1] = cs[ind]
+
+    (cs, inds) = np.unique(cs, return_index=True)
+
+    return (ps[inds], cs)
+
+
+def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal):
+    uncerts = []
+    num_mix_comps = mus.shape[-2]
+    mus = mus.reshape(-1, num_mix_comps, 3)
+    betas = betas.reshape(-1, num_mix_comps, 3)
+    pis = pis.reshape(-1, num_mix_comps)
+    for px_ind in range(betas.shape[0]):
+        mu = mus[px_ind]
+        beta = betas[px_ind]
+        pi = pis[px_ind]
+        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        if cal:
+            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
+
+        xs = np.linspace(-2, 2, 200)
+        ys = np.array([cdf_r(x) for x in xs])
+        (ys, xs) = adjust_for_quantile(ys, xs)
+        i_cdf_r = interp1d(ys, xs)
+        interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
+
+        xs = np.linspace(-2, 2, 200)
+        ys = np.array([cdf_g(x) for x in xs])
+        (ys, xs) = adjust_for_quantile(ys, xs)
+        i_cdf_g = interp1d(ys, xs)
+        interquart_g = i_cdf_g(0.75) - i_cdf_g(0.25)
+
+        xs = np.linspace(-2, 2, 200)
+        ys = np.array([cdf_b(x) for x in xs])
+        (ys, xs) = adjust_for_quantile(ys, xs)
+        i_cdf_b = interp1d(ys, xs)
+        interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
+
+        uncerts.append((interquart_r + interquart_g + interquart_b) / 3)
+
+    return uncerts
+
+
 # From: https://github.com/BayesRays/BayesRays/blob/main/bayesrays/metrics/ause.py
 def calc_ause(unc_vec, err_vec, err_type="rmse"):
     ratio_removed = np.linspace(0, 1, 100, endpoint=False)
@@ -124,8 +180,12 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
     return ratio_removed, ause_err, ause_err_by_var, ause
 
 
-def norm_cdf(x, mean, var):
-    return (1 / 2) * (1 + math.erf((x - mean) / np.sqrt(2 * var)))
+def cdf(x, mus, betas, pis):
+    return np.sum(pis * (0.5 + 0.5 * np.sign(x - mus) * (1 - np.exp(-np.abs(x - mus) / betas))))
+
+
+def pdf(x, mus, betas, pis):
+    return np.sum(pis * (1 / (2 * betas)) * np.exp(-np.abs(x - mus) / betas))
 
 
 def mse_to_psnr(mse):
@@ -214,87 +274,87 @@ def get_avg_err(preds, gts):
     )
 
 
-def get_nll(preds, gts, vars, accs, add_epistem):
+# Only available for uncalibrated flipnerf.
+def get_nll(gts, mus, betas, pis):
+    num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
-    preds = preds.reshape(-1, 3)
-    vars = vars.reshape(-1, 3)
-    accs = accs.reshape(-1)
+    mus = mus.reshape(-1, num_mix_comps, 3)
+    betas = betas.reshape(-1, num_mix_comps, 3)
+    pis = pis.reshape(-1, num_mix_comps)
     log_pdf_vals = []
-    for px_ind in range(vars.shape[0]):
+    for px_ind in range(betas.shape[0]):
         gt = gts[px_ind]
-        mu = preds[px_ind]
-        if add_epistem:
-            var = np.mean(vars[px_ind], axis=-1)
-            epistem = (1 - accs[px_ind]) ** 2
-            var = var + epistem
-        else:
-            var = vars[px_ind]
-
+        mu = mus[px_ind]
+        beta = betas[px_ind]
+        pi = pis[px_ind]
         log_pdf = np.log(
-            (np.exp(-0.5 * (gt - mu) ** 2 / var) / np.sqrt(var * 2.0 * np.pi)).prod()
+            pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
         )
+
+        print("PDF:")
+        print(pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi))
+        print("Diff. CDF:")
+        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        print(derivative(cdf_r, gt[0], dx=1e-6) * derivative(cdf_g, gt[1], dx=1e-6) * derivative(cdf_b, gt[2], dx=1e-6))
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
 
-def get_nll_finite_diff(preds, gts, vars, accs, add_epistem):
+def get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, cal):
+    num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
-    preds = preds.reshape(-1, 3)
-    vars = vars.reshape(-1, 3)
-    accs = accs.reshape(-1)
+    mus = mus.reshape(-1, num_mix_comps, 3)
+    betas = betas.reshape(-1, num_mix_comps, 3)
+    pis = pis.reshape(-1, num_mix_comps)
     log_pdf_vals = []
-    for px_ind in range(vars.shape[0]):
+    for px_ind in range(betas.shape[0]):
         gt = gts[px_ind]
-        mu = preds[px_ind]
-        if add_epistem:
-            var = np.mean(vars[px_ind], axis=-1)
-            epistem = (1 - accs[px_ind]) ** 2
-            var = var + epistem
-            cdf_r = lambda r: norm_cdf(r, mu[0], var)
-            cdf_g = lambda g: norm_cdf(g, mu[1], var)
-            cdf_b = lambda b: norm_cdf(b, mu[2], var)
-        else:
-            var = vars[px_ind]
-            cdf_r = lambda r: norm_cdf(r, mu[0], var[0])
-            cdf_g = lambda g: norm_cdf(g, mu[1], var[1])
-            cdf_b = lambda b: norm_cdf(b, mu[2], var[2])
-
+        mu = mus[px_ind]
+        beta = betas[px_ind]
+        pi = pis[px_ind]
+        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        if cal:
+            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
         log_pdf = np.log(
-            derivative(cdf_r, gt[0], dx=1e-6)
-            * derivative(cdf_g, gt[1], dx=1e-6)
-            * derivative(cdf_b, gt[2], dx=1e-6)
+            derivative(cdf_r, gt[0], dx=1e-6) * derivative(cdf_g, gt[1], dx=1e-6) * derivative(cdf_b, gt[2], dx=1e-6)
             + EPS
-        )
-
+        )        
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
 
-def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
-    preds = preds.reshape(-1, 3)
+def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
+    num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
-    vars = vars.reshape(-1, 3)
-    accs = accs.reshape(-1)
+    mus = mus.reshape(-1, num_mix_comps, 3)
+    betas = betas.reshape(-1, num_mix_comps, 3)
+    pis = pis.reshape(-1, num_mix_comps)
     p_r = []
     p_g = []
     p_b = []
 
-    for px_ind in range(vars.shape[0]):
+    for px_ind in range(betas.shape[0]):
         gt = gts[px_ind]
-        mu = preds[px_ind]
-        if add_epistem:
-            var = np.mean(vars[px_ind], axis=-1)
-            epistem = (1 - accs[px_ind]) ** 2
-            var = var + epistem
-            p_r.append(norm_cdf(gt[0], mu[0], var))
-            p_g.append(norm_cdf(gt[1], mu[1], var))
-            p_b.append(norm_cdf(gt[2], mu[2], var))
-        else:
-            var = vars[px_ind]
-            p_r.append(norm_cdf(gt[0], mu[0], var[0]))
-            p_g.append(norm_cdf(gt[1], mu[1], var[1]))
-            p_b.append(norm_cdf(gt[2], mu[2], var[2]))
+        mu = mus[px_ind]
+        beta = betas[px_ind]
+        pi = pis[px_ind]
+        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        if cal:
+            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
+        p_r.append(cdf_r(gt[0]))
+        p_g.append(cdf_g(gt[1]))
+        p_b.append(cdf_b(gt[2]))
 
     p_r = np.sort(np.array(p_r))
     p_g = np.sort(np.array(p_g))
@@ -313,19 +373,15 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
     )
 
 
-def get_ause(preds, gts, vars, accs, add_epistem, fname):
+def get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
     squared_errs = (preds - gts) ** 2
     squared_errs = squared_errs.reshape(-1, 3)
     squared_errs = np.mean(
         squared_errs, axis=-1
     )  # Use per-pixel mse over color channels
-    vars = np.mean(vars.reshape(-1, 3), axis=-1)
-    accs = accs.reshape(-1)
-    if add_epistem:
-        epistem = (1 - accs) ** 2
-        vars = vars + epistem
+    uncerts = get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal)
 
-    ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(vars, squared_errs)
+    ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(uncerts, squared_errs)
 
     # Plot and save results.
     fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -335,6 +391,6 @@ def get_ause(preds, gts, vars, accs, add_epistem, fname):
     # Label axes.
     ax.set_xlabel("Ratio Removed")
     ax.set_ylabel("RMSE")
-    fig.savefig(fname)
+    fig.savefig(f_name)
     plt.close(fig)
     return ause
