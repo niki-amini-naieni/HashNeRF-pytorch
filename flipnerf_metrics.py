@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 1e9
 import multiprocessing as mp
 from scipy.interpolate import interp1d
-import math
+import os
 
 EPS = 1e-12
 
