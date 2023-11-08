@@ -187,7 +187,7 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
     ause_err = np.array(ause_err)
     ause_err_by_var = np.array(ause_err_by_var)
 
-    ause = np.trapz(np.abs(ause_err_by_var - ause_err), ratio_removed)
+    ause = np.trapz(ause_err_by_var - ause_err, ratio_removed)
     return ratio_removed, ause_err, ause_err_by_var, ause
 
 

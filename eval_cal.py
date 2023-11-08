@@ -24,7 +24,6 @@ from jax import random
 import numpy as np
 import os 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="1,2,3"
 import tensorflow as tf
 
 
