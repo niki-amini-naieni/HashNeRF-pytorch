@@ -130,7 +130,7 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
             cdf_b = cdf_b_uncal
 
         xs = np.linspace(-2, 2, 200).reshape((200, 1))
-        ys = cdf_r(0)
+        ys = cdf_r(xs)
         print(xs.shape)
         print(ys.shape)
         xs = xs[:, 0]
@@ -202,7 +202,7 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
 
 def cdf(x, mus, betas, pis):
     return np.sum(
-        pis * (0.5 + 0.5 * np.sign(x - mus) * (1 - np.exp(-np.abs(x - mus) / betas)))
+        pis * (0.5 + 0.5 * np.sign(x - mus) * (1 - np.exp(-np.abs(x - mus) / betas))), axis=-1
     )
 
 
