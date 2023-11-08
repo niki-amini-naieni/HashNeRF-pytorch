@@ -130,7 +130,7 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
             cdf_b = cdf_b_uncal
 
         xs = np.linspace(-2, 2, 200).reshape((200, 1))
-        ys = cdf_r(xs)
+        ys = cdf_r(0)
         print(xs.shape)
         print(ys.shape)
         xs = xs[:, 0]
