@@ -346,6 +346,40 @@ def get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, cal):
     return np.mean(log_pdf_vals)
 
 
+def deriv(A, p):
+    f = lambda x: A.predict([x])[0]
+    return derivative(f, p, dx=1e-5)
+
+
+def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B):
+    num_mix_comps = mus.shape[-2]
+    gts = gts.reshape(-1, 3)
+    mus = mus.reshape(-1, num_mix_comps, 3)
+    betas = betas.reshape(-1, num_mix_comps, 3)
+    pis = pis.reshape(-1, num_mix_comps)
+    log_pdf_vals = []
+    for px_ind in range(betas.shape[0]):
+        gt = gts[px_ind]
+        mu = mus[px_ind]
+        beta = betas[px_ind]
+        pi = pis[px_ind]
+        p_r = cdf(gt[0], mu[:, 0], beta[:, 0], pi)
+        p_g = cdf(gt[1], mu[:, 1], beta[:, 1], pi)
+        p_b = cdf(gt[2], mu[:, 2], beta[:, 2], pi)
+        log_pdf = np.log(
+            deriv(A_R, p_r) * pdf(gt[0], mu[:, 0], beta[:, 0], pi) * deriv(A_G, p_g) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * deriv(A_B, p_b) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
+            + EPS
+        ) 
+        print("Old NLL:")
+        print(-np.log(pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
+            + EPS
+        ))  
+        print("New NLL:")
+        print(-log_pdf)   
+        log_pdf_vals.append(-log_pdf)
+    return np.mean(log_pdf_vals)
+
+
 def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
     num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
