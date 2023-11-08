@@ -37,7 +37,7 @@ def get_cdf_params(config, img_inds):
         assert len(logical_devices) == len(physical_devices) - 1
     except:
     # Invalid device or cannot modify virtual devices once initialized.
-        pass
+        raise Exception("err")
 
     # Set to 1 so can select which images (out of all available images for scene) to evaluate model with.
     config.llffhold = 1
