@@ -111,13 +111,17 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
-        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
-        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
-        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        cdf_r_uncal = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g_uncal = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b_uncal = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
         if cal:
-            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
-            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
-            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
+            cdf_r = lambda x: A_R.predict([cdf_r_uncal(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g_uncal(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b_uncal(x)])[0]
+        else:
+            cdf_r = cdf_r_uncal
+            cdf_g = cdf_g_uncal
+            cdf_b = cdf_b_uncal
 
         xs = np.linspace(-2, 2, 200)
         ys = np.array([cdf_r(x) for x in xs])
@@ -316,13 +320,18 @@ def get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, cal):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
-        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
-        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
-        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        cdf_r_uncal = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g_uncal = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b_uncal = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
         if cal:
-            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
-            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
-            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
+            cdf_r = lambda x: A_R.predict([cdf_r_uncal(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g_uncal(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b_uncal(x)])[0]
+        else:
+            cdf_r = cdf_r_uncal
+            cdf_g = cdf_g_uncal
+            cdf_b = cdf_b_uncal
+
         log_pdf = np.log(
             derivative(cdf_r, gt[0], dx=1e-6) * derivative(cdf_g, gt[1], dx=1e-6) * derivative(cdf_b, gt[2], dx=1e-6)
             + EPS
@@ -346,13 +355,17 @@ def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
-        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
-        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
-        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        cdf_r_uncal = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
+        cdf_g_uncal = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
+        cdf_b_uncal = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
         if cal:
-            cdf_r = lambda x: A_R.predict([cdf_r(x)])[0]
-            cdf_g = lambda x: A_G.predict([cdf_g(x)])[0]
-            cdf_b = lambda x: A_B.predict([cdf_b(x)])[0]
+            cdf_r = lambda x: A_R.predict([cdf_r_uncal(x)])[0]
+            cdf_g = lambda x: A_G.predict([cdf_g_uncal(x)])[0]
+            cdf_b = lambda x: A_B.predict([cdf_b_uncal(x)])[0]
+        else:
+            cdf_r = cdf_r_uncal
+            cdf_g = cdf_g_uncal
+            cdf_b = cdf_b_uncal
         p_r.append(cdf_r(gt[0]))
         p_g.append(cdf_g(gt[1]))
         p_b.append(cdf_b(gt[2]))
