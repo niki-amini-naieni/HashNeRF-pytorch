@@ -1,7 +1,6 @@
 import numpy as np
 from skimage.metrics import structural_similarity
 from scipy.misc import derivative
-import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 1e9
@@ -225,6 +224,9 @@ def ssim_fn(x, y):
 
 
 def load_lpips():
+    # Make sure tf not using gpu due to memory limits.
+    os.environ["CUDA_VISIBLE_DEVICES"]="-1"    
+    import tensorflow as tf
     graph = tf.compat.v1.Graph()
     session = tf.compat.v1.Session(graph=graph)
     with graph.as_default():
@@ -302,14 +304,6 @@ def get_nll(gts, mus, betas, pis):
             pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
         )
-
-        print("PDF:")
-        print(pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi))
-        print("Diff. CDF:")
-        cdf_r = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
-        cdf_g = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
-        cdf_b = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
-        print(derivative(cdf_r, gt[0], dx=1e-5) * derivative(cdf_g, gt[1], dx=1e-5) * derivative(cdf_b, gt[2], dx=1e-5))
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
@@ -369,13 +363,7 @@ def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B):
         log_pdf = np.log(
             deriv(A_R, p_r) * pdf(gt[0], mu[:, 0], beta[:, 0], pi) * deriv(A_G, p_g) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * deriv(A_B, p_b) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
-        ) 
-        print("Old NLL:")
-        print(-np.log(pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
-            + EPS
-        ))  
-        print("New NLL:")
-        print(-log_pdf)   
+        )   
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
