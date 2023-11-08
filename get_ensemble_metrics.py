@@ -142,7 +142,7 @@ def render(
         k_sh = list(sh[:-1]) + list(all_ret[k].shape[1:])
         all_ret[k] = torch.reshape(all_ret[k], k_sh)
 
-    k_extract = ["rgb_map", "depth_map", "acc_map"]
+    k_extract = ["rgb_map", "depth_map", "acc_map", "acc0"]
     ret_list = [all_ret[k] for k in k_extract]
     ret_dict = {k: all_ret[k] for k in all_ret if k not in k_extract}
     return ret_list + [ret_dict]
@@ -177,14 +177,14 @@ def render_path(
     for i, c2w in enumerate(tqdm(render_poses)):
         print(i, time.time() - t)
         t = time.time()
-        rgb, depth, acc, _ = render(
+        rgb, depth, acc_fine, acc_coarse, _ = render(
             H, W, K, chunk=chunk, c2w=c2w[:3, :4], **render_kwargs
         )
         rgbs.append(rgb.cpu().numpy())
         # normalize depth to [0,1]
         depth = (depth - near) / (far - near)
         depths.append(depth.cpu().numpy())
-        accs.append(acc.cpu().numpy())
+        accs.append((acc_fine + acc_coarse).cpu().numpy())
         if i == 0:
             print("Image shape")
             print(rgb.shape, depth.shape)

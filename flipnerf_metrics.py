@@ -272,8 +272,7 @@ def get_ssim(preds, gts):
 
 
 def get_lpips(preds, gts):
-    #return float(lpips_fn(preds, gts))
-    return 0.5
+    return float(lpips_fn(preds, gts))
 
 
 def get_avg_err(preds, gts):
