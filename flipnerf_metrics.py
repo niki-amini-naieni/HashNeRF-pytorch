@@ -3,10 +3,11 @@ from skimage.metrics import structural_similarity
 from scipy.misc import derivative
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-mpl.rcParams['agg.path.chunksize'] = 1e9
+
+mpl.rcParams["agg.path.chunksize"] = 1e9
 import multiprocessing as mp
 from scipy.interpolate import interp1d
-import os
+import tensorflow as tf
 
 EPS = 1e-12
 
@@ -101,13 +102,14 @@ def adjust_for_quantile(ps, cs):
 
 
 def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
-    
+
     global get_uncert
     num_mix_comps = mus.shape[-2]
     mus = mus.reshape(-1, num_mix_comps, 3)
     betas = betas.reshape(-1, num_mix_comps, 3)
     pis = pis.reshape(-1, num_mix_comps)
     uncerts = mp.Array("d", np.zeros(pis.shape[0]), lock=False)
+
     def get_uncert(px_ind):
         mu = mus[px_ind]
         beta = betas[px_ind]
@@ -191,7 +193,9 @@ def calc_ause(unc_vec, err_vec, err_type="rmse"):
 
 
 def cdf(x, mus, betas, pis):
-    return np.sum(pis * (0.5 + 0.5 * np.sign(x - mus) * (1 - np.exp(-np.abs(x - mus) / betas))))
+    return np.sum(
+        pis * (0.5 + 0.5 * np.sign(x - mus) * (1 - np.exp(-np.abs(x - mus) / betas)))
+    )
 
 
 def pdf(x, mus, betas, pis):
@@ -225,8 +229,9 @@ def ssim_fn(x, y):
 
 def load_lpips():
     # Make sure tf not using gpu due to memory limits.
-    os.environ["CUDA_VISIBLE_DEVICES"]="-1"    
-    import tensorflow as tf
+    # Set CPU as available physical device
+    my_devices = tf.config.experimental.list_physical_devices(device_type="CPU")
+    tf.config.experimental.set_visible_devices(devices=my_devices, device_type="CPU")
     graph = tf.compat.v1.Graph()
     session = tf.compat.v1.Session(graph=graph)
     with graph.as_default():
@@ -299,7 +304,9 @@ def get_nll(gts, mus, betas, pis):
         beta = betas[px_ind]
         pi = pis[px_ind]
         log_pdf = np.log(
-            pdf(gt[0], mu[:, 0], beta[:, 0], pi) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
+            pdf(gt[0], mu[:, 0], beta[:, 0], pi)
+            * pdf(gt[1], mu[:, 1], beta[:, 1], pi)
+            * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
         )
         log_pdf_vals.append(-log_pdf)
@@ -331,9 +338,11 @@ def get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, cal):
             cdf_b = cdf_b_uncal
 
         log_pdf = np.log(
-            derivative(cdf_r, gt[0], dx=1e-5) * derivative(cdf_g, gt[1], dx=1e-5) * derivative(cdf_b, gt[2], dx=1e-5)
+            derivative(cdf_r, gt[0], dx=1e-5)
+            * derivative(cdf_g, gt[1], dx=1e-5)
+            * derivative(cdf_b, gt[2], dx=1e-5)
             + EPS
-        )        
+        )
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
@@ -359,14 +368,19 @@ def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B):
         p_g = cdf(gt[1], mu[:, 1], beta[:, 1], pi)
         p_b = cdf(gt[2], mu[:, 2], beta[:, 2], pi)
         log_pdf = np.log(
-            deriv(A_R, p_r) * pdf(gt[0], mu[:, 0], beta[:, 0], pi) * deriv(A_G, p_g) * pdf(gt[1], mu[:, 1], beta[:, 1], pi) * deriv(A_B, p_b) * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
+            deriv(A_R, p_r)
+            * pdf(gt[0], mu[:, 0], beta[:, 0], pi)
+            * deriv(A_G, p_g)
+            * pdf(gt[1], mu[:, 1], beta[:, 1], pi)
+            * deriv(A_B, p_b)
+            * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
-        )   
+        )
         log_pdf_vals.append(-log_pdf)
     return np.mean(log_pdf_vals)
 
 
-def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
+def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name, num_procs):
     num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
     mus = mus.reshape(-1, num_mix_comps, 3)
@@ -399,9 +413,9 @@ def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
     p_r = np.sort(np.array(p_r))
     p_g = np.sort(np.array(p_g))
     p_b = np.sort(np.array(p_b))
-    hat_p_r = get_emp_confs(p_r)
-    hat_p_g = get_emp_confs(p_g)
-    hat_p_b = get_emp_confs(p_b)
+    hat_p_r = get_emp_confs(p_r, num_procs)
+    hat_p_g = get_emp_confs(p_g, num_procs)
+    hat_p_b = get_emp_confs(p_b, num_procs)
 
     # Create and save calibration plot.
     create_and_save_fig_rgb(p_r, hat_p_r, p_g, hat_p_g, p_b, hat_p_b, f_name)
@@ -413,13 +427,13 @@ def get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
     )
 
 
-def get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name):
+def get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name, num_procs):
     squared_errs = (preds - gts) ** 2
     squared_errs = squared_errs.reshape(-1, 3)
     squared_errs = np.mean(
         squared_errs, axis=-1
     )  # Use per-pixel mse over color channels
-    uncerts = get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal)
+    uncerts = get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=num_procs)
 
     ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(uncerts, squared_errs)
 

@@ -17,7 +17,9 @@ def get_args_parser():
         default="fern",
         help="name of LLFF scene out of {room, fern, flower, fortress, horns, leaves, orchids, trex}",
     )
-    parser.add_argument("--disable_lpips", action="store_true", help="disable lpips for memory reasons")
+    parser.add_argument(
+        "--disable_lpips", action="store_true", help="disable lpips for memory reasons"
+    )
     parser.add_argument(
         "--gin_config",
         default="../mini-project-2/configs/llff_fern_hold_out_rays.gin",
@@ -45,7 +47,7 @@ def get_args_parser():
     )
     parser.add_argument(
         "--num_procs",
-        default=12,
+        default=48,
         type=int,
         help="number of processes to use for multiprocessing",
     )
@@ -116,19 +118,28 @@ config = configs_cal.load_config(args.gin_config, save_config=True)
 
 # Save CDF parameters for test data from FlipNeRF model trained on 3 views.
 config.checkpoint_dir = args.test_model_dir
-(preds_test, betas_test, mus_test, pis_test, gts_test) = get_cdf_params(config, test_inds)
+(preds_test, betas_test, mus_test, pis_test, gts_test) = get_cdf_params(
+    config, test_inds
+)
 # Save CDF parameters for calibration data from FlipNeRF model trained on the masked views.
 config.checkpoint_dir = args.cal_model_dir
 (preds_cal, betas_cal, mus_cal, pis_cal, gts_cal) = get_cdf_params(config, cal_inds)
 # Load the hold-out masks.
-mask = np.ones((len(gts_cal), gts_cal[0].shape[0], gts_cal[0].shape[1], gts_cal[0].shape[2]))
+mask = np.ones(
+    (len(gts_cal), gts_cal[0].shape[0], gts_cal[0].shape[1], gts_cal[0].shape[2])
+)
 patch_size = 63
 with open("./train_masks.json") as fp:
-  train_masks = json.load(fp)
+    train_masks = json.load(fp)
 for ind in range(len(gts_cal)):
-  left_corners = train_masks["mask_" + str(ind + 1)]['left_corners']
-  for corner in left_corners:
-    mask[ind, corner[1]: (corner[1] + patch_size), corner[0]: (corner[0] + patch_size), :] = 0
+    left_corners = train_masks["mask_" + str(ind + 1)]["left_corners"]
+    for corner in left_corners:
+        mask[
+            ind,
+            corner[1] : (corner[1] + patch_size),
+            corner[0] : (corner[0] + patch_size),
+            :,
+        ] = 0
 np.save("./masked_image.npy", mask * gts_cal)
 mask = np.array(mask, dtype=bool)
 
@@ -197,27 +208,14 @@ for image_ind in range(gts.shape[0]):
     avg_psnr += get_psnr(preds[image_ind], gts[image_ind])
     avg_ssim += get_ssim(preds[image_ind], gts[image_ind])
     if not args.disable_lpips:
-      avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
-      avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
+        avg_lpips += get_lpips(preds[image_ind], gts[image_ind])
+        avg_geom_err += get_avg_err(preds[image_ind], gts[image_ind])
 
 avg_psnr = avg_psnr / gts.shape[0]
 avg_ssim = avg_ssim / gts.shape[0]
 avg_lpips = avg_lpips / gts.shape[0]
 avg_geom_err = avg_geom_err / gts.shape[0]
 
-# Compute uncertainty metrics.
-nll_uncal = get_nll(gts, mus, betas, pis)
-print("NLL Uncal.: " + str(nll_uncal))
-nll_cal = get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B)
-print("NLL Cal.: " + str(nll_cal))
-#nll_fin_uncal = get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, False)
-#nll_fin_cal = get_nll_finite_diff(gts, mus, betas, pis, A_R, A_G, A_B, True)
-cal_err_uncal = get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, False, args.output_dir + "/flipnerf-cal-err-uncal.png")
-cal_err_cal = get_cal_err(gts, mus, betas, pis, A_R, A_G, A_B, True, args.output_dir + "/flipnerf-cal-err-cal.png")
-ause_uncal = get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, False, args.output_dir + "/flipnerf-sparse-curves-uncal.png")
-ause_cal = get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, True, args.output_dir + "/flipnerf-sparse-curves-cal.png")
-
-# Print Results.
 print("PSNR:")
 print(avg_psnr)
 print("SSIM:")
@@ -227,6 +225,86 @@ print(avg_lpips)
 print("Geom. Avg. Err.:")
 print(avg_geom_err)
 
+# Compute uncertainty metrics.
+nll_uncal = get_nll(gts, mus, betas, pis)
+print("NLL (Uncal.):")
+print(nll_uncal)
+nll_cal = get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B)
+print("NLL (Cal.):")
+print(nll_cal)
+cal_err_uncal = get_cal_err(
+    gts,
+    mus,
+    betas,
+    pis,
+    A_R,
+    A_G,
+    A_B,
+    False,
+    args.output_dir + "/flipnerf-cal-err-uncal.png",
+    num_procs=args.num_procs,
+)
+print("Cal. Err. (Uncal.):")
+print(cal_err_uncal)
+cal_err_cal = get_cal_err(
+    gts,
+    mus,
+    betas,
+    pis,
+    A_R,
+    A_G,
+    A_B,
+    True,
+    args.output_dir + "/flipnerf-cal-err-cal.png",
+    num_procs=args.num_procs,
+)
+print("Cal. Err. (Cal.):")
+print(cal_err_cal)
+ause_uncal = get_ause(
+    preds,
+    gts,
+    mus,
+    betas,
+    pis,
+    A_R,
+    A_G,
+    A_B,
+    False,
+    args.output_dir + "/flipnerf-sparse-curves-uncal.png",
+    num_procs=args.num_procs,
+)
+print("AUSE (Uncal.):")
+print(ause_uncal)
+ause_cal = get_ause(
+    preds,
+    gts,
+    mus,
+    betas,
+    pis,
+    A_R,
+    A_G,
+    A_B,
+    True,
+    args.output_dir + "/flipnerf-sparse-curves-cal.png",
+    num_procs=args.num_procs,
+)
+print("AUSE (Cal.):")
+print(ause_cal)
+
+# Print Summary.
+print("SUMMARY")
+print()
+print("Image Quality:")
+print("PSNR:")
+print(avg_psnr)
+print("SSIM:")
+print(avg_ssim)
+print("LPIPS:")
+print(avg_lpips)
+print("Geom. Avg. Err.:")
+print(avg_geom_err)
+print()
+print("Uncertainty:")
 print("Cal. Err. (Uncal.):")
 print(cal_err_uncal)
 print("Cal. Err. (Cal.):")
@@ -235,10 +313,7 @@ print("AUSE (Uncal.):")
 print(ause_uncal)
 print("AUSE (Cal.):")
 print(ause_cal)
-print("NLL Fin. (Uncal.):")
-#print(nll_fin_uncal)
-print("NLL Fin. (Cal.):")
-#print(nll_fin_cal)
-print("NLL (Analytic, Uncal.):")
+print("NLL (Uncal.):")
 print(nll_uncal)
-
+print("NLL (Cal.):")
+print(nll_cal)

@@ -22,7 +22,7 @@ from internal import datasets, models, utils
 import jax
 from jax import random
 import numpy as np
-import os 
+import os
 import os
 import tensorflow as tf
 
@@ -35,9 +35,8 @@ def get_cdf_params(config, img_inds):
     dataset = datasets.load_dataset("test", config.data_dir, config)
 
     model, init_variables = models.construct_mipnerf(
-        random.PRNGKey(20200823),
-        dataset.peek()['rays'],
-        config)
+        random.PRNGKey(20200823), dataset.peek()["rays"], config
+    )
     optimizer = flax.optim.Adam(config.lr_init).create(init_variables)
     state = utils.TrainState(optimizer=optimizer)
     del optimizer, init_variables
