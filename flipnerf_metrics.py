@@ -254,10 +254,6 @@ def load_lpips():
     return lpips_distance
 
 
-lpips_fn = load_lpips()
-print("Activate LPIPS calculation with AlexNet.")
-
-
 def compute_avg_error(psnr, ssim, lpips):
     """The 'average' error used in the paper."""
     mse = psnr_to_mse(psnr)
@@ -274,6 +270,8 @@ def get_ssim(preds, gts):
 
 
 def get_lpips(preds, gts):
+    lpips_fn = load_lpips()
+    print("Activate LPIPS calculation with AlexNet.")
     return float(lpips_fn(preds, gts))
 
 
