@@ -101,13 +101,15 @@ def adjust_for_quantile(ps, cs):
     return (ps[inds], cs)
 
 
-def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal):
-    uncerts = []
+def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
+    
+    global get_uncerts
     num_mix_comps = mus.shape[-2]
     mus = mus.reshape(-1, num_mix_comps, 3)
     betas = betas.reshape(-1, num_mix_comps, 3)
     pis = pis.reshape(-1, num_mix_comps)
-    for px_ind in range(betas.shape[0]):
+    uncerts = mp.Array("d", np.zeros(pis.shape[0]), lock=False)
+    def get_uncert(px_ind):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
@@ -141,9 +143,14 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal):
         i_cdf_b = interp1d(ys, xs)
         interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
 
-        uncerts.append((interquart_r + interquart_g + interquart_b) / 3)
+        uncerts[px_ind] = (interquart_r + interquart_g + interquart_b) / 3
 
-    return uncerts
+    proc_pool = mp.Pool(num_procs)
+    proc_pool.map(get_uncert, range(pis.shape[0]))
+    proc_pool.close()
+    proc_pool.join()
+
+    return np.array(uncerts)
 
 
 # From: https://github.com/BayesRays/BayesRays/blob/main/bayesrays/metrics/ause.py
