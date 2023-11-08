@@ -114,32 +114,38 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
         mu = mus[px_ind]
         beta = betas[px_ind]
         pi = pis[px_ind]
-        cdf_r_uncal = lambda x: cdf(x, mu[:, 0], beta[:, 0], pi)
-        cdf_g_uncal = lambda x: cdf(x, mu[:, 1], beta[:, 1], pi)
-        cdf_b_uncal = lambda x: cdf(x, mu[:, 2], beta[:, 2], pi)
+        cdf_r_uncal = lambda x: cdf(
+            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 0], beta[:, 0], pi
+            )
+        cdf_g_uncal = lambda x: cdf(
+            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 1], beta[:, 1], pi
+            )
+        cdf_b_uncal = lambda x: cdf(
+            np.stack((x,) * num_mix_comps, axis=-2), mu[:, 2], beta[:, 2], pi
+            )
         if cal:
-            cdf_r = lambda x: A_R.predict([cdf_r_uncal(x)])[0]
-            cdf_g = lambda x: A_G.predict([cdf_g_uncal(x)])[0]
-            cdf_b = lambda x: A_B.predict([cdf_b_uncal(x)])[0]
+            cdf_r = lambda x: A_R.predict(cdf_r_uncal(x))
+            cdf_g = lambda x: A_G.predict(cdf_g_uncal(x))
+            cdf_b = lambda x: A_B.predict(cdf_b_uncal(x))
         else:
             cdf_r = cdf_r_uncal
             cdf_g = cdf_g_uncal
             cdf_b = cdf_b_uncal
 
         xs = np.linspace(-2, 2, 200)
-        ys = np.array([cdf_r(x) for x in xs])
+        ys = cdf_r(xs)
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_r = interp1d(ys, xs)
         interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
 
         xs = np.linspace(-2, 2, 200)
-        ys = np.array([cdf_g(x) for x in xs])
+        ys = cdf_g(x)
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_g = interp1d(ys, xs)
         interquart_g = i_cdf_g(0.75) - i_cdf_g(0.25)
 
         xs = np.linspace(-2, 2, 200)
-        ys = np.array([cdf_b(x) for x in xs])
+        ys = cdf_b(x)
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_b = interp1d(ys, xs)
         interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
@@ -291,14 +297,16 @@ def get_avg_err(preds, gts):
 
 
 # Only available for uncalibrated flipnerf.
-def get_nll(gts, mus, betas, pis):
+def get_nll(gts, mus, betas, pis, num_procs):
+    global get_nll_loc
     num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
     mus = mus.reshape(-1, num_mix_comps, 3)
     betas = betas.reshape(-1, num_mix_comps, 3)
     pis = pis.reshape(-1, num_mix_comps)
-    log_pdf_vals = []
-    for px_ind in range(betas.shape[0]):
+    log_pdf_vals = mp.Array("d", np.zeros(pis.shape[0]))
+
+    def get_nll_loc(px_ind):
         gt = gts[px_ind]
         mu = mus[px_ind]
         beta = betas[px_ind]
@@ -309,7 +317,15 @@ def get_nll(gts, mus, betas, pis):
             * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
         )
-        log_pdf_vals.append(-log_pdf)
+        log_pdf_vals[px_ind] = -log_pdf
+
+    proc_pool = mp.pool(num_procs)
+    proc_pool.map(get_nll_loc, range(pis.shape[0]))
+    proc_pool.close()
+    proc_pool.join()
+
+    log_pdf_vals = np.array(log_pdf_vals)
+
     return np.mean(log_pdf_vals)
 
 
@@ -352,14 +368,16 @@ def deriv(A, p):
     return derivative(f, p, dx=1e-5)
 
 
-def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B):
+def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B, num_procs):
+    global get_nll_loc
     num_mix_comps = mus.shape[-2]
     gts = gts.reshape(-1, 3)
     mus = mus.reshape(-1, num_mix_comps, 3)
     betas = betas.reshape(-1, num_mix_comps, 3)
     pis = pis.reshape(-1, num_mix_comps)
-    log_pdf_vals = []
-    for px_ind in range(betas.shape[0]):
+    log_pdf_vals = mp.Array("d", np.zeros(pis.shape[0]))
+
+    def get_nll_loc(px_ind):
         gt = gts[px_ind]
         mu = mus[px_ind]
         beta = betas[px_ind]
@@ -376,7 +394,15 @@ def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B):
             * pdf(gt[2], mu[:, 2], beta[:, 2], pi)
             + EPS
         )
-        log_pdf_vals.append(-log_pdf)
+        log_pdf_vals[px_ind] = -log_pdf
+
+    proc_pool = mp.pool(num_procs)
+    proc_pool.map(get_nll_loc, range(pis.shape[0]))
+    proc_pool.close()
+    proc_pool.join()
+
+    log_pdf_vals = np.array(log_pdf_vals)
+    
     return np.mean(log_pdf_vals)
 
 
