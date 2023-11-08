@@ -225,7 +225,6 @@ print(avg_lpips)
 print("Geom. Avg. Err.:")
 print(avg_geom_err)
 
-'''
 # Compute uncertainty metrics.
 nll_uncal = get_nll(gts, mus, betas, pis, args.num_procs)
 print("NLL (Uncal.):")
@@ -261,7 +260,7 @@ cal_err_cal = get_cal_err(
 )
 print("Cal. Err. (Cal.):")
 print(cal_err_cal)
-'''
+
 ause_uncal = get_ause(
     preds,
     gts,
@@ -292,7 +291,7 @@ ause_cal = get_ause(
 )
 print("AUSE (Cal.):")
 print(ause_cal)
-'''
+
 # Print Summary.
 print("SUMMARY")
 print()
@@ -319,4 +318,3 @@ print("NLL (Uncal.):")
 print(nll_uncal)
 print("NLL (Cal.):")
 print(nll_cal)
-'''

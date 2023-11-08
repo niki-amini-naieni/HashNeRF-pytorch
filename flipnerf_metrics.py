@@ -463,7 +463,7 @@ def get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name, num_procs)
     abs_errs = abs_errs.reshape(-1, 3)
     abs_errs = np.mean(
         abs_errs, axis=-1
-    )  # Use per-pixel mse over color channels
+    )  # Use per-pixel mae over color channels
     uncerts = get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=num_procs)
 
     ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(uncerts, abs_errs, err_type="mae")
@@ -475,7 +475,7 @@ def get_ause(preds, gts, mus, betas, pis, A_R, A_G, A_B, cal, f_name, num_procs)
     ax.plot(ratio_removed, ause_err_by_var, "r", linewidth=2, linestyle="-")
     # Label axes.
     ax.set_xlabel("Ratio Removed")
-    ax.set_ylabel("RMSE")
+    ax.set_ylabel("MAE")
     fig.savefig(f_name)
     plt.close(fig)
     return ause
