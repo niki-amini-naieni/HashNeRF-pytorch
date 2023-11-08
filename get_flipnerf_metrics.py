@@ -182,8 +182,6 @@ A_B = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip"
 )
 
 # Compute average image quality metrics.
-preds_test, betas_test, mus_test, pis_test, gts_test
-
 preds = np.array(preds_test)
 betas = np.array(betas_test)
 mus = np.array(mus_test)
