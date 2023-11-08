@@ -27,7 +27,7 @@ import tensorflow as tf
 
 def get_cdf_params(config, img_inds):
 
-    tf.config.experimental.set_visible_devices([], "GPU")
+    #tf.config.experimental.set_visible_devices([], "GPU")
 
     # Set to 1 so can select which images (out of all available images for scene) to evaluate model with.
     config.llffhold = 1
