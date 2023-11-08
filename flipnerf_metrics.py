@@ -319,7 +319,7 @@ def get_nll(gts, mus, betas, pis, num_procs):
         )
         log_pdf_vals[px_ind] = -log_pdf
 
-    proc_pool = mp.pool(num_procs)
+    proc_pool = mp.Pool(num_procs)
     proc_pool.map(get_nll_loc, range(pis.shape[0]))
     proc_pool.close()
     proc_pool.join()
@@ -396,13 +396,13 @@ def get_nll_chain_rule(gts, mus, betas, pis, A_R, A_G, A_B, num_procs):
         )
         log_pdf_vals[px_ind] = -log_pdf
 
-    proc_pool = mp.pool(num_procs)
+    proc_pool = mp.Pool(num_procs)
     proc_pool.map(get_nll_loc, range(pis.shape[0]))
     proc_pool.close()
     proc_pool.join()
 
     log_pdf_vals = np.array(log_pdf_vals)
-    
+
     return np.mean(log_pdf_vals)
 
 
