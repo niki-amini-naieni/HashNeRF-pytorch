@@ -134,6 +134,8 @@ def get_uncerts(mus, betas, pis, A_R, A_G, A_B, cal, num_procs=12):
 
         xs = np.linspace(-2, 2, 200)
         ys = cdf_r(xs)
+        print(xs.shape)
+        print(ys.shape)
         (ys, xs) = adjust_for_quantile(ys, xs)
         i_cdf_r = interp1d(ys, xs)
         interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
