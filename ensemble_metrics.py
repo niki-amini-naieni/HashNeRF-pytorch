@@ -9,7 +9,7 @@ mpl.rcParams["agg.path.chunksize"] = 1e9
 import multiprocessing as mp
 import math
 
-EPS = 1e-12
+EPS = 1e-5
 
 """
 - preds, gts, and other inputs are the aggregated ones for the whole ensemble of M models of shape (# test images x H x W x C), C is 3 for preds and gts but 1 for acc
