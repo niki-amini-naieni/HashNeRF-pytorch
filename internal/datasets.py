@@ -994,6 +994,8 @@ class LLFF(Dataset):
         image = np.array(Image.open(imgin), dtype=np.float32) / 255.
         images.append(image)
     images = np.stack(images, axis=0)
+    print("Printing inds to img mapping for reference")
+    print(imgfiles)
 
     # Load poses and bounds.
     with utils.open_file(path.join(self.data_dir, 'poses_bounds.npy'),

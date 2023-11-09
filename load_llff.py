@@ -114,6 +114,9 @@ def _load_data(basedir, factor=None, width=None, height=None, load_imgs=True):
         
     imgs = imgs = [imread(f)[...,:3]/255. for f in imgfiles]
     imgs = np.stack(imgs, -1)  
+
+    print("Printing inds to img mapping for reference")
+    print(imgfiles)
     
     print('Loaded image data', imgs.shape, poses[:,-1,0])
     return poses, bds, imgs

@@ -4,6 +4,7 @@ from scipy.misc import derivative
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import os
 
 mpl.rcParams["agg.path.chunksize"] = 1e9
 import multiprocessing as mp
@@ -157,8 +158,7 @@ def ssim_fn(x, y):
 def load_lpips():
     # Make sure tf not using gpu due to memory limits.
     # Set CPU as available physical device
-    my_devices = tf.config.experimental.list_physical_devices(device_type="CPU")
-    tf.config.experimental.set_visible_devices(devices=my_devices, device_type="CPU")
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     graph = tf.compat.v1.Graph()
     session = tf.compat.v1.Session(graph=graph)
     with graph.as_default():
