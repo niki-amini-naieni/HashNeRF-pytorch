@@ -566,7 +566,9 @@ def config_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument("--config", is_config_file=True, help="config file path")
     parser.add_argument("--expname", type=str, help="test name", default="test")
-    parser.add_argument("--disable_lpips", action="store_true", help="disable lpips for memory reasons")
+    parser.add_argument(
+        "--disable_lpips", action="store_true", help="disable lpips for memory reasons"
+    )
     parser.add_argument(
         "--basedir", type=str, default="./logs/", help="where to store ckpts and logs"
     )
@@ -581,6 +583,12 @@ def config_parser():
     )
     parser.add_argument("--scene", type=str, default="fern", help="name of llff scene")
     parser.add_argument("--M", type=int, default=5, help="number of ensemble members")
+    parser.add_argument(
+        "--num_procs",
+        default=48,
+        type=int,
+        help="number of processes to use for multiprocessing",
+    )
 
     # training options
     parser.add_argument("--netdepth", type=int, default=8, help="layers in network")
@@ -877,16 +885,18 @@ def test():
     ensemble = []
     for model_ind in range(args.M):
         args.expname = args.scene + "_m_" + str(model_ind)
-        if args.i_embed==1:
+        if args.i_embed == 1:
             args.expname += "_hashXYZ"
-        elif args.i_embed==0:
+        elif args.i_embed == 0:
             args.expname += "_posXYZ"
-        if args.i_embed_views==2:
+        if args.i_embed_views == 2:
             args.expname += "_sphereVIEW"
-        elif args.i_embed_views==0:
+        elif args.i_embed_views == 0:
             args.expname += "_posVIEW"
-        args.expname += "_fine"+str(args.finest_res) + "_log2T"+str(args.log2_hashmap_size)
-        args.expname += "_lr"+str(args.lrate) + "_decay"+str(args.lrate_decay)
+        args.expname += (
+            "_fine" + str(args.finest_res) + "_log2T" + str(args.log2_hashmap_size)
+        )
+        args.expname += "_lr" + str(args.lrate) + "_decay" + str(args.lrate_decay)
         args.expname += "_RAdam"
         if args.sparse_loss_weight > 0:
             args.expname += "_sparse" + str(args.sparse_loss_weight)
@@ -942,8 +952,8 @@ def test():
     avg_geom_err = avg_geom_err / gts.shape[0]
 
     # Compute uncertainty metrics.
-    nll_naive = get_nll(preds, gts, vars, accs, False)
-    nll_epist = get_nll(preds, gts, vars, accs, True)
+    nll_naive = get_nll(preds, gts, vars, accs, False, args.num_procs)
+    nll_epist = get_nll(preds, gts, vars, accs, True, args.num_procs)
     os.makedirs(args.basedir + "/" + args.scene, exist_ok=True)
     cal_err_naive = get_cal_err(
         preds,
@@ -952,6 +962,7 @@ def test():
         accs,
         False,
         args.basedir + "/" + args.scene + "/ensemble-cal-plot-naive.png",
+        args.num_procs,
     )
     cal_err_epist = get_cal_err(
         preds,
@@ -960,9 +971,24 @@ def test():
         accs,
         True,
         args.basedir + "/" + args.scene + "/ensemble-cal-plot-epist.png",
+        args.num_procs,
     )
-    ause_naive = get_ause(preds, gts, vars, accs, False, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-naive.png")
-    ause_epist = get_ause(preds, gts, vars, accs, True, args.basedir + "/" + args.scene + "/ensemble-sparse-curves-epist.png")
+    ause_naive = get_ause(
+        preds,
+        gts,
+        vars,
+        accs,
+        False,
+        args.basedir + "/" + args.scene + "/ensemble-sparse-curves-naive.png",
+    )
+    ause_epist = get_ause(
+        preds,
+        gts,
+        vars,
+        accs,
+        True,
+        args.basedir + "/" + args.scene + "/ensemble-sparse-curves-epist.png",
+    )
 
     # Print Summary.
     print("SUMMARY")

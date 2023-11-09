@@ -4,7 +4,8 @@ from scipy.misc import derivative
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-mpl.rcParams['agg.path.chunksize'] = 1e9
+
+mpl.rcParams["agg.path.chunksize"] = 1e9
 import multiprocessing as mp
 import math
 
@@ -154,6 +155,10 @@ def ssim_fn(x, y):
 
 
 def load_lpips():
+    # Make sure tf not using gpu due to memory limits.
+    # Set CPU as available physical device
+    my_devices = tf.config.experimental.list_physical_devices(device_type="CPU")
+    tf.config.experimental.set_visible_devices(devices=my_devices, device_type="CPU")
     graph = tf.compat.v1.Graph()
     session = tf.compat.v1.Session(graph=graph)
     with graph.as_default():
@@ -181,10 +186,6 @@ def load_lpips():
     return lpips_distance
 
 
-lpips_fn = load_lpips()
-print("Activate LPIPS calculation with AlexNet.")
-
-
 def compute_avg_error(psnr, ssim, lpips):
     """The 'average' error used in the paper."""
     mse = psnr_to_mse(psnr)
@@ -201,6 +202,8 @@ def get_ssim(preds, gts):
 
 
 def get_lpips(preds, gts):
+    lpips_fn = load_lpips()
+    print("Activate LPIPS calculation with AlexNet.")
     return float(lpips_fn(preds, gts))
 
 
@@ -214,19 +217,22 @@ def get_avg_err(preds, gts):
     )
 
 
-def get_nll(preds, gts, vars, accs, add_epistem):
+def get_nll(preds, gts, vars, accs, add_epistem, num_procs):
+    global get_nll_loc
     gts = gts.reshape(-1, 3)
     preds = preds.reshape(-1, 3)
     vars = vars.reshape(-1, 3)
     accs = accs.reshape(-1)
-    log_pdf_vals = []
-    for px_ind in range(vars.shape[0]):
+    log_pdf_vals = mp.Array("d", np.zeros(gts.shape[0]))
+
+    def get_nll_loc(px_ind):
         gt = gts[px_ind]
         mu = preds[px_ind]
         if add_epistem:
-            var = np.mean(vars[px_ind], axis=-1)
-            epistem = (1 - accs[px_ind]) ** 2
-            var = var + epistem
+            # See Density-aware NeRF Ensembles: Quantifying Predictive Uncertainty in Neural Radiance Fields.
+            var = np.mean(vars[px_ind], axis=-1)  # eq. 5
+            epistem = (1 - accs[px_ind]) ** 2  # eq. 8
+            var = var + epistem  # eq. 9
         else:
             var = vars[px_ind]
 
@@ -234,7 +240,15 @@ def get_nll(preds, gts, vars, accs, add_epistem):
             (np.exp(-0.5 * (gt - mu) ** 2 / var) / np.sqrt(var * 2.0 * np.pi)).prod()
             + EPS
         )
-        log_pdf_vals.append(-log_pdf)
+        log_pdf_vals[px_ind] = -log_pdf
+
+    proc_pool = mp.Pool(num_procs)
+    proc_pool.map(get_nll_loc, range(gts.shape[0]))
+    proc_pool.close()
+    proc_pool.join()
+
+    log_pdf_vals = np.array(log_pdf_vals)
+
     return np.mean(log_pdf_vals)
 
 
@@ -271,7 +285,7 @@ def get_nll_finite_diff(preds, gts, vars, accs, add_epistem):
     return np.mean(log_pdf_vals)
 
 
-def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
+def get_cal_err(preds, gts, vars, accs, add_epistem, f_name, num_procs):
     preds = preds.reshape(-1, 3)
     gts = gts.reshape(-1, 3)
     vars = vars.reshape(-1, 3)
@@ -299,9 +313,9 @@ def get_cal_err(preds, gts, vars, accs, add_epistem, f_name):
     p_r = np.sort(np.array(p_r))
     p_g = np.sort(np.array(p_g))
     p_b = np.sort(np.array(p_b))
-    hat_p_r = get_emp_confs(p_r)
-    hat_p_g = get_emp_confs(p_g)
-    hat_p_b = get_emp_confs(p_b)
+    hat_p_r = get_emp_confs(p_r, num_procs)
+    hat_p_g = get_emp_confs(p_g, num_procs)
+    hat_p_b = get_emp_confs(p_b, num_procs)
 
     # Create and save calibration plot.
     create_and_save_fig_rgb(p_r, hat_p_r, p_g, hat_p_g, p_b, hat_p_b, f_name)
@@ -319,13 +333,19 @@ def get_ause(preds, gts, vars, accs, add_epistem, fname):
     squared_errs = np.mean(
         squared_errs, axis=-1
     )  # Use per-pixel mse over color channels
+    abs_errs = np.abs(preds - gts)
+    abs_errs = abs_errs.reshape(-1, 3)
+    abs_errs = np.mean(abs_errs, axis=-1)  # Use per-pixel mae over color channels
+
     vars = np.mean(vars.reshape(-1, 3), axis=-1)
     accs = accs.reshape(-1)
     if add_epistem:
         epistem = (1 - accs) ** 2
         vars = vars + epistem
 
-    ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(vars, squared_errs)
+    ratio_removed, ause_err, ause_err_by_var, ause = calc_ause(
+        vars, abs_errs, err_type="mae"
+    )
 
     # Plot and save results.
     fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -334,7 +354,7 @@ def get_ause(preds, gts, vars, accs, add_epistem, fname):
     ax.plot(ratio_removed, ause_err_by_var, "r", linewidth=2, linestyle="-")
     # Label axes.
     ax.set_xlabel("Ratio Removed")
-    ax.set_ylabel("RMSE")
+    ax.set_ylabel("MAE")
     fig.savefig(fname)
     plt.close(fig)
     return ause
