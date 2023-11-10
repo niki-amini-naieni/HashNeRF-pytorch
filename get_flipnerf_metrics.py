@@ -21,6 +21,9 @@ def get_args_parser():
         "--disable_lpips", action="store_true", help="disable lpips for memory reasons"
     )
     parser.add_argument(
+        "--save_reg_data", action="store_true", help="save regression data for future processing"
+    )
+    parser.add_argument(
         "--gin_config",
         default="../mini-project-2/configs/llff_fern_hold_out_rays.gin",
         help="name of Gin config file for pretrained FlipNeRF model",
@@ -181,6 +184,15 @@ print(len(hat_p_r))
 D_R = (p_r, hat_p_r)
 D_G = (p_g, hat_p_g)
 D_B = (p_b, hat_p_b)
+
+# Save regression data if requested.
+if args.save_reg_data:
+    np.save(args.output_dir + "/" + "p_r.npy", p_r)
+    np.save(args.output_dir + "/" + "p_g.npy", p_g)
+    np.save(args.output_dir + "/" + "p_b.npy", p_b)
+    np.save(args.output_dir + "/" + "hat_p_r.npy", hat_p_r)
+    np.save(args.output_dir + "/" + "hat_p_g.npy", hat_p_g)
+    np.save(args.output_dir + "/" + "hat_p_b.npy", hat_p_b)
 
 # Train auxiliary models A^{R}, A^{G}, and A^{B} on calibration sets D^{R}, D^{G}, and D^{B}.
 A_R = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip").fit(
