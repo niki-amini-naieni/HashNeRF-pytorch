@@ -310,6 +310,9 @@ def create_nerf(args):
         'raw_noise_std' : args.raw_noise_std,
     }
 
+    # Print model parameters.
+    print(model.parameters())
+
     # NDC only good for LLFF-style forward facing data
     if args.dataset_type != 'llff' or args.no_ndc:
         print('Not ndc!')
