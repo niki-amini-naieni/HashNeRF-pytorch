@@ -311,7 +311,7 @@ def create_nerf(args):
     }
 
     # Print model parameters.
-    print(model.parameters())
+    print([param for param in model.parameters()])
 
     # NDC only good for LLFF-style forward facing data
     if args.dataset_type != 'llff' or args.no_ndc:
