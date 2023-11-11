@@ -153,7 +153,7 @@ def get_cdf_params(config):
     showcases = []
 
     rd.seed(0)
-    test_inds = rd.sample(list(range(dataset.size)), 10)
+    test_inds = rd.sample(list(range(dataset.size)), 20)
     print(test_inds)
     for idx in range(dataset.size):
       if idx in test_inds:
