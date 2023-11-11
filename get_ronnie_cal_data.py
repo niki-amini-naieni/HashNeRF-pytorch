@@ -156,6 +156,8 @@ A_B = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip"
 mus_test = np.array(mus_test)
 betas_test = np.array(betas_test)
 pis_test = np.array(pis_test)
+preds_test = np.array(preds_test)
+gts_test = np.array(gts_test)
 cal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, True, num_procs=args.num_procs)
 
 uncal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, False, num_procs=args.num_procs)
