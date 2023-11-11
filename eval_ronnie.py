@@ -154,6 +154,7 @@ def get_cdf_params(config):
 
     rd.seed(0)
     test_inds = rd.sample(list(range(dataset.size)), 10)
+    print(test_inds)
     for idx in range(dataset.size):
       if idx in test_inds:
         print(f'Evaluating image {idx+1}/{dataset.size}')
@@ -224,9 +225,6 @@ def get_cdf_params(config):
                     lpips=metric['lpips_masked'],
                 ))
           
-          for m, v in metric.items():
-            print(f'{m:10s} = {v:.4f}')
-          metrics.append(metric)
 
         # Save CDF parameters.
         preds.append(np.array(rendering["rgb"]))
@@ -234,19 +232,5 @@ def get_cdf_params(config):
         mus.append(np.array(rendering["mu"]))
         pis.append(np.array(rendering["pi"]))
         gts.append(np.array(batch["rgb"]))
-
-      if (not config.eval_only_once) and (jax.host_id() == 0):
-        for name in list(metrics[0].keys()):
-          summary_writer.scalar(name, np.mean([m[name] for m in metrics]), step)
-        for i, r, b in showcases:
-          for k, v in vis.visualize_suite(r, b['rays'], config).items():
-            summary_writer.image(f'pred_{k}_{i}', v, step)
-          if not config.render_path:
-            summary_writer.image(f'target_{i}', b['rgb'], step)
-      if config.eval_only_once:
-        break
-      if int(step) >= config.max_steps:
-        break
-      last_step = step
 
     return (preds, betas, mus, pis, gts)
