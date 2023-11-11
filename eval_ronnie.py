@@ -22,7 +22,7 @@ from absl import app
 import flax
 from flax.metrics import tensorboard
 from flax.training import checkpoints
-from internal import configs, datasets, math, models, utils, vis  # pylint: disable=g-multiple-import
+from internal import datasets, math, models, utils, vis  # pylint: disable=g-multiple-import
 import jax
 from jax import random
 import numpy as np
