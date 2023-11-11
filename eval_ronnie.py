@@ -243,11 +243,6 @@ def get_cdf_params(config):
             summary_writer.image(f'pred_{k}_{i}', v, step)
           if not config.render_path:
             summary_writer.image(f'target_{i}', b['rgb'], step)
-      if (config.eval_save_output and (not config.render_path) and
-          (jax.host_id() == 0)):
-        for name in list(metrics[0].keys()):
-          with utils.open_file(path_fn(f'metric_{name}_{step}.txt'), 'w') as f:
-            f.write(' '.join([str(m[name]) for m in metrics]))
       if config.eval_only_once:
         break
       if int(step) >= config.max_steps:
