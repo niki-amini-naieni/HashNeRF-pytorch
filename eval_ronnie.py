@@ -29,7 +29,7 @@ import numpy as np
 from skimage.metrics import structural_similarity
 import tensorflow as tf
 
-import random
+import random as rd
 
 
 CENSUS_EPSILON = 1 / 256  # Guard against ground-truth quantization.
@@ -152,7 +152,7 @@ def get_cdf_params(config):
     metrics = []
     showcases = []
 
-    random.seed(0)
+    rd.seed(0)
     test_inds = random.sample(list(range(dataset.size)), 10)
     for idx in range(dataset.size):
       if idx in test_inds:
