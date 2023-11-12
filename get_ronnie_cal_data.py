@@ -102,6 +102,10 @@ mus_test = np.array(mus_test)
 pis_test = np.array(pis_test)
 gts_test = np.array(gts_test)
 
+mask = np.ones(pis_test.shape)
+if args.exclude_white:
+    mask = (preds_test.sum(-1) < 3)
+
 # Construct the calibration sets D^{R}, D^{G}, and D^{B}.
 
 # a) Compute expected confidence levels.
@@ -113,9 +117,10 @@ for img_ind in range(len(pis_test)):
     expected_cdf_vals = cdf(
         pis_test[img_ind], mus_test[img_ind], betas_test[img_ind], gts_test[img_ind]
     )
-    p_r = p_r + list(expected_cdf_vals[:, :, 0].flatten())
-    p_g = p_g + list(expected_cdf_vals[:, :, 1].flatten())
-    p_b = p_b + list(expected_cdf_vals[:, :, 2].flatten())
+    mask_flattened = mask[img_ind].flatten()
+    p_r = p_r + list(expected_cdf_vals[:, :, 0].flatten()[mask_flattened])
+    p_g = p_g + list(expected_cdf_vals[:, :, 1].flatten()[mask_flattened])
+    p_b = p_b + list(expected_cdf_vals[:, :, 2].flatten()[mask_flattened])
 
 p_r = np.sort(p_r)
 p_g = np.sort(p_g)
