@@ -103,7 +103,7 @@ pis_test = np.array(pis_test)
 gts_test = np.array(gts_test)
 
 summed_pred = np.sum(preds_test, axis=-1)
-mask = summed_pred < 3
+mask = summed_pred < 3 - 1e-3
 
 # Construct the calibration sets D^{R}, D^{G}, and D^{B}.
 
