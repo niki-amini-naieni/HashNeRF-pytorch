@@ -23,6 +23,9 @@ def get_args_parser():
         help="directory where to save output",
     )
     parser.add_argument(
+        "--exclude_white", action="store_true", help="exclude white background from calibration"
+    )
+    parser.add_argument(
         "--num_procs",
         default=48,
         type=int,
@@ -93,6 +96,15 @@ config = configs_cal.load_config(args.gin_config, save_config=True)
     config
 )
 
+preds_test = np.array(preds_test)
+betas_test = np.array(betas_test)
+mus_test = np.array(mus_test)
+pis_test = np.array(pis_test)
+gts_test = np.array(gts_test)
+
+summed_pred = np.sum(preds_test, axis=-1)
+mask = summed_pred < 3
+
 # Construct the calibration sets D^{R}, D^{G}, and D^{B}.
 
 # a) Compute expected confidence levels.
@@ -104,9 +116,9 @@ for img_ind in range(len(pis_test)):
     expected_cdf_vals = cdf(
         pis_test[img_ind], mus_test[img_ind], betas_test[img_ind], gts_test[img_ind]
     )
-    p_r = p_r + list(expected_cdf_vals[:, :, 0].flatten())
-    p_g = p_g + list(expected_cdf_vals[:, :, 1].flatten())
-    p_b = p_b + list(expected_cdf_vals[:, :, 2].flatten())
+    p_r = p_r + list(expected_cdf_vals[:, :, 0][mask[img_ind, :, :]].flatten())
+    p_g = p_g + list(expected_cdf_vals[:, :, 1][mask[img_ind, :, :]].flatten())
+    p_b = p_b + list(expected_cdf_vals[:, :, 2][mask[img_ind, :, :]].flatten())
 
 p_r = np.sort(p_r)
 p_g = np.sort(p_g)
@@ -154,11 +166,6 @@ A_B = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip"
 )
 
 # Get uncertainty masks.
-mus_test = np.array(mus_test)
-betas_test = np.array(betas_test)
-pis_test = np.array(pis_test)
-preds_test = np.array(preds_test)
-gts_test = np.array(gts_test)
 cal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, True, num_procs=args.num_procs)
 
 uncal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, False, num_procs=args.num_procs)
