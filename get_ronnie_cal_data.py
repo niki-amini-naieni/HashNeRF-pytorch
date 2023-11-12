@@ -168,14 +168,14 @@ A_B = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip"
 )
 
 # Get uncertainty masks.
-'''
-cal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, True, num_procs=args.num_procs)
 
-uncal_uncerts = get_uncerts(mus_test, betas_test, pis_test, A_R, A_G, A_B, False, num_procs=args.num_procs)
+cal_uncerts = get_uncerts_masked(mus_test, betas_test, pis_test, mask, A_R, A_G, A_B, True, num_procs=args.num_procs)
+
+uncal_uncerts = get_uncerts_masked(mus_test, betas_test, pis_test, mask, A_R, A_G, A_B, False, num_procs=args.num_procs)
 
 np.save(args.output_dir + "/cal_masks.npy", cal_uncerts.reshape((preds_test.shape[0], preds_test.shape[1], preds_test.shape[2])))
 np.save(args.output_dir + "/uncal_masks.npy", uncal_uncerts.reshape((preds_test.shape[0], preds_test.shape[1], preds_test.shape[2])))
-'''
+
 
 create_and_save_fig_rgb(
     p_r,
