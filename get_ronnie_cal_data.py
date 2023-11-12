@@ -140,6 +140,7 @@ np.save(args.output_dir + "/" + "hat_p_r.npy", hat_p_r)
 np.save(args.output_dir + "/" + "hat_p_g.npy", hat_p_g)
 np.save(args.output_dir + "/" + "hat_p_b.npy", hat_p_b)
 np.save(args.output_dir + "/" + "preds.npy", preds_test)
+np.save(args.output_dir + "/" + "gts.npy", gts_test)
 
 # Train auxiliary models A^{R}, A^{G}, and A^{B} on calibration sets D^{R}, D^{G}, and D^{B}.
 A_R = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip").fit(
