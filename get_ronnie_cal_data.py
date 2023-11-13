@@ -102,7 +102,7 @@ mus_test = np.array(mus_test)
 pis_test = np.array(pis_test)
 gts_test = np.array(gts_test)
 
-mask = np.ones(pis_test.shape)
+mask = np.ones(pis_test.shape, dtype=bool)
 if args.exclude_white:
     mask = (preds_test.sum(-1) < 3)
 
