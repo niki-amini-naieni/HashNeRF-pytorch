@@ -190,29 +190,26 @@ def get_uncerts_masked(mus, betas, pis, mask, A_R, A_G, A_B, cal, num_procs=12):
                 cdf_g = cdf_g_uncal
                 cdf_b = cdf_b_uncal
 
-            try:
-                xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
-                ys = cdf_r(xs)
-                xs = xs[:, 0]
-                (ys, xs) = adjust_for_quantile(ys, xs)
-                i_cdf_r = interp1d(ys, xs)
-                interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
+            xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
+            ys = cdf_r(xs)
+            xs = xs[:, 0]
+            (ys, xs) = adjust_for_quantile(ys, xs)
+            i_cdf_r = interp1d(ys, xs, fill_value="extrapolate")
+            interquart_r = i_cdf_r(0.75) - i_cdf_r(0.25)
 
-                xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
-                ys = cdf_g(xs)
-                xs = xs[:, 0]
-                (ys, xs) = adjust_for_quantile(ys, xs)
-                i_cdf_g = interp1d(ys, xs)
-                interquart_g = i_cdf_g(0.75) - i_cdf_g(0.25)
+            xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
+            ys = cdf_g(xs)
+            xs = xs[:, 0]
+            (ys, xs) = adjust_for_quantile(ys, xs)
+            i_cdf_g = interp1d(ys, xs, fill_value="extrapolate")
+            interquart_g = i_cdf_g(0.75) - i_cdf_g(0.25)
 
-                xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
-                ys = cdf_b(xs)
-                xs = xs[:, 0]
-                (ys, xs) = adjust_for_quantile(ys, xs)
-                i_cdf_b = interp1d(ys, xs)
-                interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
-            except Exception:
-                print(np.max(ys))
+            xs = np.linspace(-10, 10, 1000).reshape((1000, 1))
+            ys = cdf_b(xs)
+            xs = xs[:, 0]
+            (ys, xs) = adjust_for_quantile(ys, xs)
+            i_cdf_b = interp1d(ys, xs, fill_value="extrapolate")
+            interquart_b = i_cdf_b(0.75) - i_cdf_b(0.25)
 
             uncerts[px_ind] = (interquart_r + interquart_g + interquart_b) / 3
 
