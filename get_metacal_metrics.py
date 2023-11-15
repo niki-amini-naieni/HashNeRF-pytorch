@@ -134,6 +134,16 @@ D_R = (p_r, hat_p_r)
 D_G = (p_g, hat_p_g)
 D_B = (p_b, hat_p_b)
 
+create_and_save_fig_rgb(
+    p_r,
+    hat_p_r,
+    p_g,
+    hat_p_g,
+    p_b,
+    hat_p_b,
+    "ronnie-cal-plot.png",
+)
+
 # Train auxiliary models A^{R}, A^{G}, and A^{B} on calibration sets D^{R}, D^{G}, and D^{B}.
 A_R = IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip").fit(
     D_R[0], D_R[1]
