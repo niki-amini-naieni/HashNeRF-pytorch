@@ -120,12 +120,12 @@ config.checkpoint_dir = args.test_model_dir
 )
 
 # Increase precision of data for regression. [IsotonicRegression] casts result to lower-precision type, so the below code ensures the inputs are both of the same, high-precision type.
-hat_p_r = np.loadtxt(args.cal_curve_dir + "/results_red/" + args.scene + "_pred.txt")
-p_r = np.linspace(0, 1, hat_p_r.shape[0])
-p_g = p_r
-hat_p_g = np.loadtxt(args.cal_curve_dir + "/results_green/" + args.scene + "_pred.txt")
-p_b = p_r
-hat_p_b = np.loadtxt(args.cal_curve_dir + "/results_blue/" + args.scene + "_pred.txt")
+p_r = np.loadtxt(args.cal_curve_dir + "/results_red/" + args.scene + "_pred.txt")
+hat_p_r = np.linspace(0, 1, p_r.shape[0])
+hat_p_g = hat_p_r
+p_g = np.loadtxt(args.cal_curve_dir + "/results_green/" + args.scene + "_pred.txt")
+hat_p_b = hat_p_r
+p_b = np.loadtxt(args.cal_curve_dir + "/results_blue/" + args.scene + "_pred.txt")
 print("Length of cal. set expected confs:")
 print(len(p_r))
 print("Length of cal. set empirical confs:")
