@@ -979,7 +979,7 @@ def test():
     accs_cand = np.mean(ensemble_accs_cand, axis=0)
 
     # Select next best view.
-    uncerts = vars_cand + (1 - accs_cand) ** 2
+    uncerts = np.mean(vars_cand, axis=-1) + (1 - accs_cand) ** 2
     next_view = i_candidate[np.argmax(np.sum(uncerts, axis=(1, 2)))]
     # Update data splits file.
     all_data_splits[args.scene]["train"] += [next_view]
