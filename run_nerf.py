@@ -13,8 +13,6 @@ from torch.distributions import Categorical
 from tqdm import tqdm, trange
 import pickle
 
-import matplotlib.pyplot as plt
-
 from run_nerf_helpers import *
 from optimizer import MultiOptimizer
 from radam import RAdam
@@ -178,6 +176,7 @@ def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedi
             print(p)
             psnrs.append(p)
 
+        '''
         if savedir is not None:
             # save rgb and depth as a figure
             fig = plt.figure(figsize=(25,15))
@@ -194,7 +193,7 @@ def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedi
             plt.close(fig)
             # imageio.imwrite(filename, rgb8)
 
-
+        '''
     rgbs = np.stack(rgbs, 0)
     depths = np.stack(depths, 0)
     if gt_imgs is not None and render_factor==0:
