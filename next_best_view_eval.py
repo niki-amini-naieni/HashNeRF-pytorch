@@ -15,12 +15,17 @@ from run_nerf_helpers import *
 from radam import RAdam
 
 from load_llff import load_llff_data
-from ensemble_metrics import *
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG = False
 
+def mse_to_psnr(mse):
+    """Compute PSNR given an MSE (we assume the maximum pixel value is 1)."""
+    return -10.0 / np.log(10.0) * np.log(mse)
+
+def get_psnr(preds, gts):
+    return float(mse_to_psnr(((preds - gts) ** 2).mean()))
 
 def batchify(fn, chunk):
     """Constructs a version of 'fn' that applies to smaller batches."""
