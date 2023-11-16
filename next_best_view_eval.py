@@ -864,7 +864,11 @@ def test():
     scene_data_split = all_data_splits[args.scene]
     i_test = np.array(scene_data_split["test"])
     i_train = np.array(scene_data_split["train"])
-    i_candidate = np.array(scene_data_split["candidate"])
+    has_candidates = False
+    if len(scene_data_split["candidate"]) > 0: 
+        has_candidates = True
+    if has_candidates:
+        i_candidate = np.array(scene_data_split["candidate"])
 
     # Use NDC.
     near = 0.0
@@ -880,7 +884,8 @@ def test():
 
     if args.render_test:
         render_poses_test = np.array(poses[i_test])
-        render_poses_cand = np.array(poses[i_candidate])
+        if has_candidates:
+            render_poses_cand = np.array(poses[i_candidate])
 
 
     # Create ensemble of nerf models.
@@ -914,12 +919,15 @@ def test():
 
     # Move testing data to GPU
     render_poses_test = torch.Tensor(render_poses_test).to(device)
-    render_poses_cand = torch.Tensor(render_poses_cand).to(device)
+    if has_candidates:
+        render_poses_cand = torch.Tensor(render_poses_cand).to(device)
     images_test = images[i_test]
-    images_cand = images[i_candidate]
+    if has_candidates:
+        images_cand = images[i_candidate]
 
     gts_test = images_test
-    gts_cand = images_cand
+    if has_candidates:
+        gts_cand = images_cand
     ensemble_preds_test = np.zeros(
         (args.M, gts_test.shape[0], gts_test.shape[1], gts_test.shape[2], gts_test.shape[3])
     )
@@ -955,39 +963,40 @@ def test():
     with open(args.basedir + '/psnr-log.txt', 'a') as f:
         f.write(str(len(i_train)) + " views: " + str(avg_psnr) + "\n")
 
-    ensemble_preds_cand = np.zeros(
-        (args.M, gts_cand.shape[0], gts_cand.shape[1], gts_cand.shape[2], gts_cand.shape[3])
-    )
-    ensemble_accs_cand = np.zeros((args.M, gts_cand.shape[0], gts_cand.shape[1], gts_cand.shape[2]))
-    with torch.no_grad():
-        print("test poses shape", render_poses_cand.shape)
-        for member_ind in range(args.M):
-            rgbs, _, accs = render_path(
-                render_poses_cand,
-                hwf,
-                K,
-                args.chunk,
-                ensemble[member_ind],
-                gt_imgs=gts_cand,
-                render_factor=args.render_factor,
-            )
-            ensemble_preds_cand[member_ind, :, :, :, :] = rgbs
-            ensemble_accs_cand[member_ind, :, :, :] = accs
+    if has_candidates:
+        ensemble_preds_cand = np.zeros(
+            (args.M, gts_cand.shape[0], gts_cand.shape[1], gts_cand.shape[2], gts_cand.shape[3])
+        )
+        ensemble_accs_cand = np.zeros((args.M, gts_cand.shape[0], gts_cand.shape[1], gts_cand.shape[2]))
+        with torch.no_grad():
+            print("test poses shape", render_poses_cand.shape)
+            for member_ind in range(args.M):
+                rgbs, _, accs = render_path(
+                    render_poses_cand,
+                    hwf,
+                    K,
+                    args.chunk,
+                    ensemble[member_ind],
+                    gt_imgs=gts_cand,
+                    render_factor=args.render_factor,
+                )
+                ensemble_preds_cand[member_ind, :, :, :, :] = rgbs
+                ensemble_accs_cand[member_ind, :, :, :] = accs
 
-    preds_cand = np.mean(ensemble_preds_cand, axis=0)
-    vars_cand = np.var(ensemble_preds_cand, axis=0)
-    accs_cand = np.mean(ensemble_accs_cand, axis=0)
+        preds_cand = np.mean(ensemble_preds_cand, axis=0)
+        vars_cand = np.var(ensemble_preds_cand, axis=0)
+        accs_cand = np.mean(ensemble_accs_cand, axis=0)
 
-    # Select next best view.
-    uncerts = np.mean(vars_cand, axis=-1) + (1 - accs_cand) ** 2
-    next_view = i_candidate[np.argmax(np.sum(uncerts, axis=(1, 2)))]
-    # Update data splits file.
-    all_data_splits[args.scene]["train"] += [int(next_view)]
-    all_data_splits[args.scene]["candidate"].remove(next_view)
+        # Select next best view.
+        uncerts = np.mean(vars_cand, axis=-1) + (1 - accs_cand) ** 2
+        next_view = i_candidate[np.argmax(np.sum(uncerts, axis=(1, 2)))]
+        # Update data splits file.
+        all_data_splits[args.scene]["train"] += [int(next_view)]
+        all_data_splits[args.scene]["candidate"].remove(next_view)
 
-    with open(args.data_split_file, "w") as fp:
-        split_json = json.dumps(all_data_splits)
-        fp.write(split_json)
+        with open(args.data_split_file, "w") as fp:
+            split_json = json.dumps(all_data_splits)
+            fp.write(split_json)
 
 
 
