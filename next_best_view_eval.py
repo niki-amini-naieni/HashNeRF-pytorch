@@ -982,7 +982,7 @@ def test():
     uncerts = np.mean(vars_cand, axis=-1) + (1 - accs_cand) ** 2
     next_view = i_candidate[np.argmax(np.sum(uncerts, axis=(1, 2)))]
     # Update data splits file.
-    all_data_splits[args.scene]["train"] += [next_view]
+    all_data_splits[args.scene]["train"] += [int(next_view)]
     all_data_splits[args.scene]["candidate"].remove(next_view)
 
     with open(args.data_split_file, "w") as fp:
