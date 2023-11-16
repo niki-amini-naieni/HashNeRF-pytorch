@@ -497,17 +497,17 @@ def config_parser():
 
     import configargparse
     parser = configargparse.ArgumentParser()
-    parser.add_argument('--config', is_config_file=True,
+    parser.add_argument('--config', default='./configs/horns.txt', is_config_file=True,
                         help='config file path')
     parser.add_argument("--expname", type=str,
                         help='experiment name')
     parser.add_argument("--basedir", type=str, default='./logs/',
                         help='where to store ckpts and logs')
-    parser.add_argument("--datadir", type=str, default='./data/llff/fern',
+    parser.add_argument("--datadir", type=str, default="/root/FlipNeRF-main/data/nerf_llff_data/horns",
                         help='input data directory')
     parser.add_argument("--data_split_file", type=str, default='./llff_data_splits.json', help="JSON file with data splits")
     parser.add_argument("--seed", type=int, default=0, help="seed for random weight initialization")
-    parser.add_argument("--scene", type=str, default="fern", help="name of llff scene")
+    parser.add_argument("--scene", type=str, default="horns", help="name of llff scene")
 
     # training options
     parser.add_argument("--netdepth", type=int, default=8,
